@@ -1,13 +1,13 @@
 package cc.silk.gui.components;
 
 import cc.silk.module.Category;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.awt.*;
 
 public class UIRenderer {
 
-    public static void renderGlow(DrawContext context, int x, int y, int width, int height, Color glowColor, float intensity) {
+    public static void renderGlow(GuiGraphicsExtractor context, int x, int y, int width, int height, Color glowColor, float intensity) {
         for (int layer = 2; layer >= 0; layer--) {
             float alpha = intensity * (0.1f + 0.2f * (float) layer / 2);
             int expand = layer;
@@ -17,7 +17,7 @@ public class UIRenderer {
         }
     }
 
-    public static void renderRoundedRect(DrawContext context, int x, int y, int width, int height, int radius, Color color) {
+    public static void renderRoundedRect(GuiGraphicsExtractor context, int x, int y, int width, int height, int radius, Color color) {
         context.fill(x + radius, y, x + width - radius, y + height, color.getRGB());
         context.fill(x, y + radius, x + width, y + height - radius, color.getRGB());
 
@@ -34,7 +34,7 @@ public class UIRenderer {
         }
     }
 
-    public static void renderDropdownArrow(DrawContext context, int x, int y, boolean expanded, Color color) {
+    public static void renderDropdownArrow(GuiGraphicsExtractor context, int x, int y, boolean expanded, Color color) {
         int arrowSize = 8;
         int halfSize = arrowSize / 2;
 
@@ -51,7 +51,7 @@ public class UIRenderer {
         }
     }
 
-    public static void renderSlider(DrawContext context, int x, int y, int width, int height, double normalized, Color trackColor, Color fillColor) {
+    public static void renderSlider(GuiGraphicsExtractor context, int x, int y, int width, int height, double normalized, Color trackColor, Color fillColor) {
         renderGlow(context, x, y, width, height, fillColor, 0.02f);
 
         context.fill(x, y, x + width, y + height, trackColor.getRGB());
@@ -63,14 +63,14 @@ public class UIRenderer {
         }
     }
 
-    public static void renderCheckbox(DrawContext context, int x, int y, int size, boolean enabled, Color borderColor, Color fillColor) {
+    public static void renderCheckbox(GuiGraphicsExtractor context, int x, int y, int size, boolean enabled, Color borderColor, Color fillColor) {
         if (enabled) {
             renderGlow(context, x, y, size, size, borderColor, 0.02f);
         }
 
         context.fill(x, y, x + size, y + size, fillColor.getRGB());
 
-        context.drawBorder(x, y, size, size, borderColor.getRGB());
+        context.outline(x, y, size, size, borderColor.getRGB());
     }
 
     public static Color getCategoryColor(Category category) {

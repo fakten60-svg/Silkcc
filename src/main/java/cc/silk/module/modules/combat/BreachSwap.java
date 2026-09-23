@@ -9,15 +9,15 @@ import cc.silk.module.setting.BooleanSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.mc.EnchantmentUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.util.Identifier;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.MaceItem;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.MaceItem;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 
 public final class BreachSwap extends Module {
 
@@ -39,7 +39,7 @@ public final class BreachSwap extends Module {
     public void onAttack(AttackEvent event) {
         if (isNull() || isSwappingAttack)
             return;
-        if (onlyOnGround.getValue() && !mc.player.isOnGround())
+        if (onlyOnGround.getValue() && !mc.player.onGround())
             return;
         if (ShieldBreaker.breakingShield)
             return;
@@ -51,20 +51,20 @@ public final class BreachSwap extends Module {
             return;
 
         if (originalSlot == -1) {
-            originalSlot = mc.player.getInventory().selectedSlot;
+            originalSlot = mc.player.getInventory().getSelectedSlot();
         }
 
         if (silentSwap.getValue()) {
-            int prevSlot = mc.player.getInventory().selectedSlot;
-            mc.player.getInventory().selectedSlot = maceSlot;
+            int prevSlot = mc.player.getInventory().getSelectedSlot();
+            mc.player.getInventory().setSelectedSlot(maceSlot);
 
             isSwappingAttack = true;
             ((MinecraftClientAccessor) mc).invokeDoAttack();
             isSwappingAttack = false;
 
-            mc.player.getInventory().selectedSlot = prevSlot;
+            mc.player.getInventory().setSelectedSlot(prevSlot);
         } else {
-            mc.player.getInventory().selectedSlot = maceSlot;
+            mc.player.getInventory().setSelectedSlot(maceSlot);
 
             isSwappingAttack = true;
             ((MinecraftClientAccessor) mc).invokeDoAttack();
@@ -84,30 +84,30 @@ public final class BreachSwap extends Module {
 
         if (shouldSwitchBack && System.currentTimeMillis() - switchTime >= switchDelay.getValue()) {
             if (originalSlot != -1) {
-                mc.player.getInventory().selectedSlot = originalSlot;
+                mc.player.getInventory().setSelectedSlot(originalSlot);
                 originalSlot = -1;
             }
             shouldSwitchBack = false;
         }
 
-        if (mc.options.attackKey.isPressed()) {
-            HitResult hitResult = mc.crosshairTarget;
+        if (mc.options.keyAttack.isDown()) {
+            HitResult hitResult = mc.hitResult;
             if (hitResult instanceof EntityHitResult ehr && ehr.getEntity() instanceof LivingEntity) {
                 int maceSlot = findBreachMaceSlot();
                 if (maceSlot != -1) {
                     if (originalSlot == -1) {
-                        originalSlot = mc.player.getInventory().selectedSlot;
+                        originalSlot = mc.player.getInventory().getSelectedSlot();
                     }
 
                     if (silentSwap.getValue()) {
-                        int prevSlot = mc.player.getInventory().selectedSlot;
-                        mc.player.getInventory().selectedSlot = maceSlot;
+                        int prevSlot = mc.player.getInventory().getSelectedSlot();
+                        mc.player.getInventory().setSelectedSlot(maceSlot);
 
                         ((MinecraftClientAccessor) mc).invokeDoAttack();
 
-                        mc.player.getInventory().selectedSlot = prevSlot;
+                        mc.player.getInventory().setSelectedSlot(prevSlot);
                     } else {
-                        mc.player.getInventory().selectedSlot = maceSlot;
+                        mc.player.getInventory().setSelectedSlot(maceSlot);
 
                         ((MinecraftClientAccessor) mc).invokeDoAttack();
 
@@ -121,7 +121,7 @@ public final class BreachSwap extends Module {
 
     private int findBreachMaceSlot() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             Item item = stack.getItem();
             if (item instanceof MaceItem && hasBreach(stack)) {
                 return i;
@@ -131,15 +131,15 @@ public final class BreachSwap extends Module {
     }
 
     private boolean hasBreach(ItemStack stack) {
-        RegistryKey<net.minecraft.enchantment.Enchantment> breachKey = RegistryKey.of(RegistryKeys.ENCHANTMENT,
-                Identifier.of("minecraft", "breach"));
-        return EnchantmentUtil.hasEnchantment(stack, mc.world, breachKey);
+        ResourceKey<net.minecraft.world.item.enchantment.Enchantment> breachKey = ResourceKey.create(Registries.ENCHANTMENT,
+                Identifier.fromNamespaceAndPath("minecraft", "breach"));
+        return EnchantmentUtil.hasEnchantment(stack, mc.level, breachKey);
     }
 
     @Override
     public void onDisable() {
         if (originalSlot != -1) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
             originalSlot = -1;
         }
         shouldSwitchBack = false;

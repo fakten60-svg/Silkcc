@@ -4,11 +4,14 @@ import cc.silk.SilkClient;
 import cc.silk.utils.render.font.fonts.FontRenderer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import lombok.experimental.UtilityClass;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.*;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.rendertype.*;
+import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.PoseStack;
+import cc.silk.utils.render.RenderCompat;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 import java.awt.*;
@@ -27,9 +30,9 @@ public final class RenderUtils {
         rendering3D = true;
     }
 
-    public static void renderOutline(MatrixStack matrices, Box box, Color color) {
-        Matrix4f matrix = matrices.peek().getPositionMatrix();
-        BufferBuilder buffer = Tessellator.getInstance().begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+    public static void renderOutline(PoseStack matrices, AABB box, Color color) {
+        Matrix4f matrix = matrices.last().pose();
+        BufferBuilder buffer = RenderCompat.begin(RenderTypes.lines());
 
         float r = color.getRed() / 255.0f;
         float g = color.getGreen() / 255.0f;
@@ -43,39 +46,39 @@ public final class RenderUtils {
         float maxY = (float) box.maxY;
         float maxZ = (float) box.maxZ;
 
-        buffer.vertex(matrix, minX, minY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, minY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, minY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, minY, minZ).color(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, a);
 
-        buffer.vertex(matrix, minX, maxY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, maxY, minZ).color(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, a);
 
-        buffer.vertex(matrix, minX, minY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, maxY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, minY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, a);
 
-        BufferRenderer.drawWithGlobalProgram(buffer.end());
+        RenderCompat.draw(buffer);
     }
 
-    public static void renderFilled(MatrixStack matrices, Box box, Color color) {
-        Matrix4f matrix = matrices.peek().getPositionMatrix();
-        BufferBuilder buffer = Tessellator.getInstance().begin(VertexFormat.DrawMode.TRIANGLES, VertexFormats.POSITION_COLOR);
+    public static void renderFilled(PoseStack matrices, AABB box, Color color) {
+        Matrix4f matrix = matrices.last().pose();
+        BufferBuilder buffer = RenderCompat.begin(RenderTypes.debugTriangleFan());
 
         float r = color.getRed() / 255.0f;
         float g = color.getGreen() / 255.0f;
@@ -89,68 +92,68 @@ public final class RenderUtils {
         float maxY = (float) box.maxY;
         float maxZ = (float) box.maxZ;
 
-        buffer.vertex(matrix, minX, minY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, minY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, minY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, maxY, minZ).color(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, a);
 
-        buffer.vertex(matrix, maxX, minY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, minY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, a);
 
-        buffer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, a);
 
-        buffer.vertex(matrix, minX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, minY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, maxY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, maxY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, a);
 
-        buffer.vertex(matrix, minX, maxY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, maxY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, a);
 
-        buffer.vertex(matrix, minX, minY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, minX, minY, minZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, a);
-        buffer.vertex(matrix, maxX, minY, minZ).color(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, a);
+        buffer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, a);
 
-        BufferRenderer.drawWithGlobalProgram(buffer.end());
+        RenderCompat.draw(buffer);
     }
 
-    public static void renderLine(MatrixStack matrices, Vec3d start, Vec3d end, Color color) {
-        Matrix4f matrix = matrices.peek().getPositionMatrix();
-        BufferBuilder buffer = Tessellator.getInstance().begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+    public static void renderLine(PoseStack matrices, Vec3 start, Vec3 end, Color color) {
+        Matrix4f matrix = matrices.last().pose();
+        BufferBuilder buffer = RenderCompat.begin(RenderTypes.lines());
 
         float r = color.getRed() / 255.0f;
         float g = color.getGreen() / 255.0f;
         float b = color.getBlue() / 255.0f;
         float a = color.getAlpha() / 255.0f;
 
-        buffer.vertex(matrix, (float) start.x, (float) start.y, (float) start.z).color(r, g, b, a);
-        buffer.vertex(matrix, (float) end.x, (float) end.y, (float) end.z).color(r, g, b, a);
+        buffer.addVertex(matrix, (float) start.x, (float) start.y, (float) start.z).setColor(r, g, b, a);
+        buffer.addVertex(matrix, (float) end.x, (float) end.y, (float) end.z).setColor(r, g, b, a);
 
-        BufferRenderer.drawWithGlobalProgram(buffer.end());
+        RenderCompat.draw(buffer);
     }
 
 
-    public static void drawRoundedRect(DrawContext context, int x, int y, int width, int height, int radius, int color) {
+    public static void drawRoundedRect(GuiGraphicsExtractor context, int x, int y, int width, int height, int radius, int color) {
 
         context.fill(x + radius, y, x + width - radius, y + height, color);
         context.fill(x, y + radius, x + radius, y + height - radius, color);
@@ -163,7 +166,7 @@ public final class RenderUtils {
         drawRoundedCorner(context, x + width - radius, y + height - radius, radius, color, 3);
     }
 
-    public static void drawRoundedRectGradient(DrawContext context, int x, int y, int width, int height, int radius, int colorTop, int colorBottom) {
+    public static void drawRoundedRectGradient(GuiGraphicsExtractor context, int x, int y, int width, int height, int radius, int colorTop, int colorBottom) {
         context.fillGradient(x + radius, y, x + width - radius, y + height, colorTop, colorBottom);
         context.fillGradient(x, y + radius, x + radius, y + height - radius, colorTop, colorBottom);
         context.fillGradient(x + width - radius, y + radius, x + width, y + height - radius, colorTop, colorBottom);
@@ -174,7 +177,7 @@ public final class RenderUtils {
         drawRoundedCornerGradient(context, x + width - radius, y + height - radius, radius, colorTop, colorBottom, 3);
     }
 
-    private static void drawRoundedCorner(DrawContext context, int centerX, int centerY, int radius, int color, int corner) {
+    private static void drawRoundedCorner(GuiGraphicsExtractor context, int centerX, int centerY, int radius, int color, int corner) {
         float radiusF = (float) radius;
 
         for (int i = 0; i < radius; i++) {
@@ -219,7 +222,7 @@ public final class RenderUtils {
         }
     }
 
-    public static void drawFilledCircle(DrawContext context, int centerX, int centerY, int radius, int color) {
+    public static void drawFilledCircle(GuiGraphicsExtractor context, int centerX, int centerY, int radius, int color) {
         for (int y = -radius; y <= radius; y++) {
             for (int x = -radius; x <= radius; x++) {
                 if (x * x + y * y <= radius * radius) {
@@ -230,7 +233,7 @@ public final class RenderUtils {
     }
 
 
-    private static void drawRoundedCornerGradient(DrawContext context, int centerX, int centerY, int radius, int colorTop, int colorBottom, int corner) {
+    private static void drawRoundedCornerGradient(GuiGraphicsExtractor context, int centerX, int centerY, int radius, int colorTop, int colorBottom, int corner) {
         float radiusF = (float) radius;
 
         for (int i = 0; i < radius; i++) {
@@ -297,7 +300,7 @@ public final class RenderUtils {
         return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
-    public static void drawGlow(DrawContext context, int x, int y, int width, int height, int radius, int color, int glowRadius) {
+    public static void drawGlow(GuiGraphicsExtractor context, int x, int y, int width, int height, int radius, int color, int glowRadius) {
         for (int i = 1; i <= glowRadius; i++) {
             int alpha = (int) (((color >> 24) & 0xFF) * (1.0f - (float) i / glowRadius) * 0.3f);
             int glowColor = (alpha << 24) | (color & 0x00FFFFFF);
@@ -306,7 +309,7 @@ public final class RenderUtils {
         }
     }
 
-    public static void drawSmoothRect(DrawContext context, int x, int y, int width, int height, int color) {
+    public static void drawSmoothRect(GuiGraphicsExtractor context, int x, int y, int width, int height, int color) {
         context.fill(x, y, x + width, y + height, color);
 
         int edgeColor = (color & 0x00FFFFFF) | (((color >> 24) & 0xFF) / 2 << 24);
@@ -316,7 +319,7 @@ public final class RenderUtils {
         context.fill(x, y + height, x + width, y + height + 1, edgeColor);
     }
 
-    public static void drawSmoothRoundedRect(DrawContext context, int x, int y, int width, int height, int radius, int color) {
+    public static void drawSmoothRoundedRect(GuiGraphicsExtractor context, int x, int y, int width, int height, int radius, int color) {
         context.fill(x + radius, y, x + width - radius, y + height, color);
         context.fill(x, y + radius, x + radius, y + height - radius, color);
         context.fill(x + width - radius, y + radius, x + width, y + height - radius, color);
@@ -327,7 +330,7 @@ public final class RenderUtils {
         drawSmoothRoundedCorner(context, x + width - radius, y + height - radius, radius, color, 3);
     }
 
-    private static void drawSmoothRoundedCorner(DrawContext context, int centerX, int centerY, int radius, int color, int corner) {
+    private static void drawSmoothRoundedCorner(GuiGraphicsExtractor context, int centerX, int centerY, int radius, int color, int corner) {
         float radiusF = (float) radius;
 
         for (float i = 0; i < radius; i += 0.5f) {
@@ -383,11 +386,11 @@ public final class RenderUtils {
         }
     }
 
-    public static void drawGradientRect(DrawContext context, int x, int y, int width, int height, int colorTop, int colorBottom) {
+    public static void drawGradientRect(GuiGraphicsExtractor context, int x, int y, int width, int height, int colorTop, int colorBottom) {
         context.fillGradient(x, y, x + width, y + height, colorTop, colorBottom);
     }
 
-    public static void fillWithGlow(DrawContext context, int x1, int y1, int x2, int y2, int color, float glowIntensity) {
+    public static void fillWithGlow(GuiGraphicsExtractor context, int x1, int y1, int x2, int y2, int color, float glowIntensity) {
         Color c = new Color(color, true);
 
         for (int pass = 0; pass < 4; pass++) {
@@ -418,7 +421,7 @@ public final class RenderUtils {
         }
     }
 
-    public static void drawTextWithGlow(DrawContext context, net.minecraft.client.font.TextRenderer textRenderer,
+    public static void drawTextWithGlow(GuiGraphicsExtractor context, net.minecraft.client.gui.Font font,
                                         String text, int x, int y, int color, float glowIntensity) {
         Color c = new Color(color, true);
 
@@ -451,11 +454,11 @@ public final class RenderUtils {
             }
 
             int glowColor = new Color(c.getRed(), c.getGreen(), c.getBlue(), glowAlpha).getRGB();
-            context.drawText(textRenderer, text, x + offsetX, y + offsetY, glowColor, false);
+            context.text(font, text, x + offsetX, y + offsetY, glowColor, false);
         }
     }
 
-    public static void drawCustomTextWithGlow(MatrixStack matrices, FontRenderer fontRenderer,
+    public static void drawCustomTextWithGlow(PoseStack matrices, FontRenderer fontRenderer,
                                               String text, int x, int y, int color, float glowIntensity) {
         Color c = new Color(color, true);
 

@@ -1,12 +1,11 @@
 {
   "required": true,
   "package": "cc.silk.mixin",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "JAVA_25",
   "mixins": [
     "ChatScreenMixin",
     "ClientPlayerInteractionManagerMixin",
     "EntityMixin",
-    "ExampleMixin",
     "GameRendererMixin",
     "HandledScreenMixin",
     "InGameHudMixin",
@@ -24,9 +23,13 @@
   "injectors": {
     "defaultRequire": 1
   },
+  "overwrites": {
+    "requireAnnotations": true
+  },
   "client": [
     "HandledScreenAccessor",
     "LightmapTextureManagerMixin",
+    "WindowMixin",
     "WorldRendererAccessor"
   ]
 }

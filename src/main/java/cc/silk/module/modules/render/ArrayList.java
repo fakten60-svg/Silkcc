@@ -7,7 +7,7 @@ import cc.silk.module.Module;
 import cc.silk.module.setting.*;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.gui.screens.ChatScreen;
 
 import java.awt.*;
 import java.util.Comparator;
@@ -53,9 +53,9 @@ public class ArrayList extends Module {
 
     @EventHandler
     private void onRender2D(Render2DEvent event) {
-        if (mc.player == null || mc.world == null)
+        if (mc.player == null || mc.level == null)
             return;
-        if (mc.currentScreen != null && !(mc.currentScreen instanceof ChatScreen))
+        if (mc.screen != null && !(mc.screen instanceof ChatScreen))
             return;
 
         List<Module> enabledModules = SilkClient.INSTANCE.getModuleManager().getEnabledModules();
@@ -84,8 +84,8 @@ public class ArrayList extends Module {
     }
 
     private void renderModuleList(List<Module> modules) {
-        int screenWidth = mc.getWindow().getScaledWidth();
-        int screenHeight = mc.getWindow().getScaledHeight();
+        int screenWidth = mc.getWindow().getGuiScaledWidth();
+        int screenHeight = mc.getWindow().getGuiScaledHeight();
 
         float size = (float) fontSize.getValue();
         float pad = (float) padding.getValue();
@@ -173,8 +173,8 @@ public class ArrayList extends Module {
                         NanoVGRenderer.drawLine(x, y, x, y + bgHeight, outlineW, outlineColor);
 
                         if (i > 0 && previousWidth != animatedWidth) {
-                            float prevX = screenWidth - previousWidth - xOff;
-                            NanoVGRenderer.drawLine(x, y, prevX, y, outlineW, outlineColor);
+                            float xo = screenWidth - previousWidth - xOff;
+                            NanoVGRenderer.drawLine(x, y, xo, y, outlineW, outlineColor);
                         }
 
                         if (i == modules.size() - 1) {
@@ -195,8 +195,8 @@ public class ArrayList extends Module {
                                 outlineColor);
 
                         if (i > 0 && previousWidth != animatedWidth) {
-                            float prevX = xOff + previousWidth;
-                            NanoVGRenderer.drawLine(prevX, y, x + animatedWidth, y, outlineW, outlineColor);
+                            float xo = xOff + previousWidth;
+                            NanoVGRenderer.drawLine(xo, y, x + animatedWidth, y, outlineW, outlineColor);
                         }
 
                         if (i == modules.size() - 1) {

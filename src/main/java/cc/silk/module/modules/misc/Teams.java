@@ -3,9 +3,9 @@ package cc.silk.module.modules.misc;
 import cc.silk.SilkClient;
 import cc.silk.module.Category;
 import cc.silk.module.Module;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 
 public class Teams extends Module {
 
@@ -24,12 +24,12 @@ public class Teams extends Module {
         }
 
         try {
-            MinecraftClient mc = MinecraftClient.getInstance();
-            if (mc.player == null || mc.player.getScoreboardTeam() == null) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player == null || mc.player.getTeam() == null) {
                 return false;
             }
 
-            return mc.player.isTeammate(entity);
+            return mc.player.isAlliedTo(entity);
         } catch (IllegalStateException e) {
             return false;
         } catch (Exception e) {

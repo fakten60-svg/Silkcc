@@ -8,14 +8,14 @@ import cc.silk.module.setting.NumberSetting;
 import cc.silk.module.setting.BooleanSetting;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.PotionContentsComponent;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.potion.Potion;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.core.Holder;
+import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +45,7 @@ public final class AutoPot extends Module {
 
     @EventHandler
     private void onTickEvent(TickEvent event) {
-        if (isNull() || mc.currentScreen != null || mc.player.isUsingItem()) return;
+        if (isNull() || mc.screen != null || mc.player.isUsingItem()) return;
 
         if (isWaitingToThrow) {
             if (swapTimer.hasElapsedTime(swapDelay.getValueInt())) {
@@ -66,8 +66,8 @@ public final class AutoPot extends Module {
             if (availablePotionSlots.isEmpty()) return;
 
             if (savedHotbarSlot == -1) {
-                savedHotbarSlot = mc.player.getInventory().selectedSlot;
-                savedPitch = mc.player.getPitch();
+                savedHotbarSlot = mc.player.getInventory().getSelectedSlot();
+                savedPitch = mc.player.getXRot();
             }
 
             startRotation(89.9f);
@@ -82,12 +82,12 @@ public final class AutoPot extends Module {
 
     private void handleRotation() {
         if (rotationSpeed.getValueFloat() <= 1.0f) {
-            mc.player.setPitch(targetPitch);
+            mc.player.setXRot(targetPitch);
             isRotating = false;
             if (targetPitch == 89.9f) {
                 startThrowSequence();
             } else {
-                mc.player.getInventory().selectedSlot = savedHotbarSlot;
+                mc.player.getInventory().setSelectedSlot(savedHotbarSlot);
                 resetState();
             }
         } else {
@@ -95,16 +95,16 @@ public final class AutoPot extends Module {
             rotationProgress += speed;
 
             if (rotationProgress >= 1.0f) {
-                mc.player.setPitch(targetPitch);
+                mc.player.setXRot(targetPitch);
                 isRotating = false;
                 if (targetPitch == 89.9f) {
                     startThrowSequence();
                 } else {
-                    mc.player.getInventory().selectedSlot = savedHotbarSlot;
+                    mc.player.getInventory().setSelectedSlot(savedHotbarSlot);
                     resetState();
                 }
             } else {
-                mc.player.setPitch(MathHelper.lerp(rotationProgress, savedPitch, targetPitch));
+                mc.player.setXRot(Mth.lerp(rotationProgress, savedPitch, targetPitch));
             }
         }
     }
@@ -119,7 +119,7 @@ public final class AutoPot extends Module {
     }
 
     private void executeThrow() {
-        mc.player.getInventory().selectedSlot = availablePotionSlots.get(0);
+        mc.player.getInventory().setSelectedSlot(availablePotionSlots.get(0));
         ((MinecraftClientAccessor) mc).invokeDoItemUse();
         isWaitingToThrow = false;
         startRotation(savedPitch);
@@ -136,7 +136,7 @@ public final class AutoPot extends Module {
     private void findAvailablePotions() {
         availablePotionSlots.clear();
         for (int i = 0; i < 9; i++) {
-            if (isHealthPotion(mc.player.getInventory().getStack(i))) {
+            if (isHealthPotion(mc.player.getInventory().getItem(i))) {
                 availablePotionSlots.add(i);
             }
         }
@@ -145,17 +145,17 @@ public final class AutoPot extends Module {
     private boolean isHealthPotion(ItemStack stack) {
         if (stack.getItem() != Items.SPLASH_POTION) return false;
         
-        PotionContentsComponent potionContents = stack.get(DataComponentTypes.POTION_CONTENTS);
+        PotionContents potionContents = stack.get(DataComponents.POTION_CONTENTS);
         if (potionContents == null) return false;
 
         if (potionContents.potion().isPresent()) {
-            RegistryEntry<Potion> potionEntry = potionContents.potion().get();
+            Holder<Potion> potionEntry = potionContents.potion().get();
             return potionEntry.value().getEffects().stream()
-                    .anyMatch(effect -> effect.getEffectType().equals(StatusEffects.INSTANT_HEALTH));
+                    .anyMatch(effect -> effect.getEffect().equals(MobEffects.INSTANT_HEALTH));
         }
 
         return potionContents.customEffects().stream()
-                .anyMatch(effect -> effect.getEffectType().equals(StatusEffects.INSTANT_HEALTH));
+                .anyMatch(effect -> effect.getEffect().equals(MobEffects.INSTANT_HEALTH));
     }
 
     @Override
@@ -169,8 +169,8 @@ public final class AutoPot extends Module {
     @Override
     public void onDisable() {
         if (savedHotbarSlot != -1) {
-            mc.player.getInventory().selectedSlot = savedHotbarSlot;
-            mc.player.setPitch(savedPitch);
+            mc.player.getInventory().setSelectedSlot(savedHotbarSlot);
+            mc.player.setXRot(savedPitch);
         }
         resetState();
         super.onDisable();
@@ -183,15 +183,15 @@ public final class AutoPot extends Module {
     
     private boolean canThrowPotion() {
         if (minPlayerDistance.getValueFloat() > 0 && isPlayerTooClose()) return false;
-        if (requireOnGround.getValue() && !mc.player.isOnGround()) return false;
+        if (requireOnGround.getValue() && !mc.player.onGround()) return false;
         return true;
     }
     
     private boolean isPlayerTooClose() {
-        if (mc.world == null) return false;
+        if (mc.level == null) return false;
         
         double minDistance = minPlayerDistance.getValueFloat();
-        return mc.world.getPlayers().stream()
+        return mc.level.players().stream()
                 .anyMatch(player -> player != mc.player && 
                         mc.player.distanceTo(player) < minDistance);
     }

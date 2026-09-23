@@ -8,9 +8,9 @@ import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.math.TimerUtil;
 import cc.silk.utils.notification.NotificationManager;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.sound.SoundEvents;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.sounds.SoundEvents;
 
 public final class ReBuffNotifier extends Module {
 
@@ -32,8 +32,8 @@ public final class ReBuffNotifier extends Module {
     private void onTickEvent(TickEvent event) {
         if (mc.player == null || !isEnabled()) return;
 
-        boolean hasSpeed = mc.player.hasStatusEffect(StatusEffects.SPEED);
-        boolean hasStrength = mc.player.hasStatusEffect(StatusEffects.STRENGTH);
+        boolean hasSpeed = mc.player.hasEffect(MobEffects.SPEED);
+        boolean hasStrength = mc.player.hasEffect(MobEffects.STRENGTH);
 
         if (!hasSpeed && hadSpeed) {
             onEffectExpired("Speed");
@@ -66,7 +66,7 @@ public final class ReBuffNotifier extends Module {
         isPlayingSound = true;
         soundTimer.reset();
 
-        mc.getSoundManager().play(PositionedSoundInstance.master(SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(), volume.getValueFloat()));
+        mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.NOTE_BLOCK_PLING.value(), volume.getValueFloat()));
     }
 
     private void stopSoundNotification() {

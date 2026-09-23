@@ -8,10 +8,10 @@ import cc.silk.module.setting.KeybindSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.keybinding.KeyUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.item.Items;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
 import org.lwjgl.glfw.GLFW;
 
 public final class KeyLava extends Module {
@@ -36,7 +36,7 @@ public final class KeyLava extends Module {
     private void onTickEvent(TickEvent event) {
         if (isNull() || !isEnabled())
             return;
-        if (mc.currentScreen != null)
+        if (mc.screen != null)
             return;
 
         boolean currentKeyState = KeyUtils.isKeyPressed(lavaKeybind.getKeyCode());
@@ -64,14 +64,14 @@ public final class KeyLava extends Module {
     }
 
     private void startLavaPlace() {
-        originalSlot = mc.player.getInventory().selectedSlot;
+        originalSlot = mc.player.getInventory().getSelectedSlot();
         tickCounter = 0;
         cycleComplete = false;
     }
 
     private void resetState() {
         if (originalSlot != -1 && !pendingRestoreSlot) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
         }
         originalSlot = -1;
         tickCounter = 0;
@@ -81,11 +81,11 @@ public final class KeyLava extends Module {
     }
 
     private void processLavaCycle() {
-        if (!(mc.crosshairTarget instanceof BlockHitResult blockHit))
+        if (!(mc.hitResult instanceof BlockHitResult blockHit))
             return;
 
         BlockPos targetBlock = blockHit.getBlockPos();
-        var blockState = mc.world.getBlockState(targetBlock);
+        var blockState = mc.level.getBlockState(targetBlock);
 
         if (blockState.isAir())
             return;
@@ -109,11 +109,11 @@ public final class KeyLava extends Module {
         }
     }
 
-    private boolean swapToItem(net.minecraft.item.Item item) {
+    private boolean swapToItem(net.minecraft.world.item.Item item) {
         for (int i = 0; i < 9; i++) {
-            var stack = mc.player.getInventory().getStack(i);
+            var stack = mc.player.getInventory().getItem(i);
             if (!stack.isEmpty() && stack.getItem() == item) {
-                mc.player.getInventory().selectedSlot = i;
+                mc.player.getInventory().setSelectedSlot(i);
                 return true;
             }
         }
@@ -122,7 +122,7 @@ public final class KeyLava extends Module {
 
     private void restoreOriginalSlot() {
         if (originalSlot != -1) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
         }
     }
 

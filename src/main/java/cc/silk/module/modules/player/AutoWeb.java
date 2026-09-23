@@ -11,7 +11,7 @@ import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.keybinding.KeyUtils;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.Items;
+import net.minecraft.world.item.Items;
 import org.lwjgl.glfw.GLFW;
 
 import java.security.SecureRandom;
@@ -40,7 +40,7 @@ public final class AutoWeb extends Module {
 
     @EventHandler
     private void onTickEvent(TickEvent event) {
-        if (mc.player == null || mc.world == null)
+        if (mc.player == null || mc.level == null)
             return;
 
         boolean currentKeyState = KeyUtils.isKeyPressed(webKeybind.getKeyCode());
@@ -71,8 +71,8 @@ public final class AutoWeb extends Module {
                 return;
             }
 
-            originalSlot = mc.player.getInventory().selectedSlot;
-            mc.player.getInventory().selectedSlot = webSlot;
+            originalSlot = mc.player.getInventory().getSelectedSlot();
+            mc.player.getInventory().setSelectedSlot(webSlot);
             hasSwitchedToWeb = true;
             clickTimer.reset();
             return;
@@ -104,7 +104,7 @@ public final class AutoWeb extends Module {
         if (!isActive) return;
 
         if (autoSwitch.getValue() && originalSlot != -1) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
         }
 
         isActive = false;
@@ -115,7 +115,7 @@ public final class AutoWeb extends Module {
 
     private int findCobwebInHotbar() {
         for (int i = 0; i < 9; i++) {
-            var stack = mc.player.getInventory().getStack(i);
+            var stack = mc.player.getInventory().getItem(i);
             if (!stack.isEmpty() && stack.getItem() == Items.COBWEB) {
                 return i;
             }

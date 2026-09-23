@@ -14,11 +14,15 @@ import cc.silk.utils.render.font.FontManager;
 import cc.silk.utils.render.font.fonts.FontRenderer;
 import cc.silk.gui.theme.Theme;
 import cc.silk.gui.theme.ThemeManager;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.screens.Screen;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 import java.awt.*;
@@ -57,7 +61,7 @@ public final class ClickGui extends Screen {
     private String selectedConfig = "";
 
     public ClickGui() {
-        super(Text.empty());
+        super(Component.empty());
 
         FontManager fontManager = SilkClient.INSTANCE.getFontManager();
         this.titleFont = fontManager.getSize(24, FontManager.Type.Poppins);
@@ -86,7 +90,7 @@ public final class ClickGui extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
         animationManager.updateAnimations(delta);
         animationManager.updateGuiAnimations(delta);
@@ -97,17 +101,17 @@ public final class ClickGui extends Screen {
             lastModuleExpanded.clear();
             lastModuleExpanded.putAll(moduleExpanded);
             SilkClient.INSTANCE.getModuleManager().getModule(ClickGUIModule.class).get().setEnabled(false);
-            super.close();
+            super.onClose();
             return;
         }
 
         int screenWidth = width;
         int screenHeight = height;
 
-        renderBackground(context, mouseX, mouseY, delta);
+        extractBackground(context, mouseX, mouseY, delta);
 
-        MatrixStack matrices = context.getMatrices();
-        matrices.push();
+        PoseStack matrices = new PoseStack();
+        matrices.pushPose();
 
         float centerX = screenWidth / 2f;
         float centerY = screenHeight / 2f;
@@ -136,17 +140,17 @@ public final class ClickGui extends Screen {
 
         renderHeader(context, containerX, containerY, containerWidth, mouseX, mouseY);
 
-        matrices.pop();
+        matrices.popPose();
 
 
     }
 
 
-    private void renderHeader(DrawContext context, int x, int y, int width, int mouseX, int mouseY) {
+    private void renderHeader(GuiGraphicsExtractor context, int x, int y, int width, int mouseX, int mouseY) {
         int headerAlpha = (int) (animationManager.getGuiAnimation() * 255);
         Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
         context.fill(x, y, x + width, y + HEADER_HEIGHT, applyAlpha(theme.headerBg(), headerAlpha).getRGB());
-        MatrixStack matrices = context.getMatrices();
+        PoseStack matrices = new PoseStack();
 
 
         String fullTitle = "Silk";
@@ -162,8 +166,8 @@ public final class ClickGui extends Screen {
         renderSearchBar(context, x, y, width);
     }
 
-    private void renderSearchBar(DrawContext context, int x, int y, int width) {
-        MatrixStack matrices = context.getMatrices();
+    private void renderSearchBar(GuiGraphicsExtractor context, int x, int y, int width) {
+        PoseStack matrices = new PoseStack();
 
         Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
 
@@ -193,7 +197,7 @@ public final class ClickGui extends Screen {
         }
     }
 
-    private void renderSidebar(DrawContext context, int x, int y, int height, int mouseX, int mouseY) {
+    private void renderSidebar(GuiGraphicsExtractor context, int x, int y, int height, int mouseX, int mouseY) {
         int sidebarAlpha = (int) (animationManager.getGuiAnimation() * 255);
     Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
     Color sb = applyAlpha(theme.sidebarBg(), sidebarAlpha);
@@ -203,7 +207,7 @@ public final class ClickGui extends Screen {
         int sidebarX = x;
         int sidebarY = y + HEADER_HEIGHT;
 
-        MatrixStack matrices = context.getMatrices();
+        PoseStack matrices = new PoseStack();
         int categoryY = sidebarY + PADDING;
 
         for (Category category : Category.values()) {
@@ -213,7 +217,7 @@ public final class ClickGui extends Screen {
 
             float targetAnimation = isSelected ? 1f : (isHovered ? 0.3f : 0f);
             float currentAnimation = animationManager.getCategoryAnimation(category);
-            float newAnimation = MathHelper.lerp(0.15f, currentAnimation, targetAnimation);
+            float newAnimation = Mth.lerp(0.15f, currentAnimation, targetAnimation);
             animationManager.setCategoryAnimation(category, newAnimation);
             Color textColor = isSelected ? Color.WHITE : new Color(190, 190, 190);
             regularFont.drawString(matrices, category.getName(), sidebarX + 20, categoryY + 13, textColor);
@@ -222,7 +226,7 @@ public final class ClickGui extends Screen {
         }
     }
 
-    private void renderContent(DrawContext context, int x, int y, int width, int height, int mouseX, int mouseY) {
+    private void renderContent(GuiGraphicsExtractor context, int x, int y, int width, int height, int mouseX, int mouseY) {
     Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
     int contentAlpha = (int) (animationManager.getGuiAnimation() * animationManager.getCategorySwitch() * 255);
     Color panel = applyAlpha(theme.panelBg(), contentAlpha);
@@ -240,8 +244,8 @@ public final class ClickGui extends Screen {
         context.disableScissor();
     }
 
-    private void renderModuleContent(DrawContext context, int x, int y, int width, int height, int mouseX, int mouseY) {
-        MatrixStack matrices = context.getMatrices();
+    private void renderModuleContent(GuiGraphicsExtractor context, int x, int y, int width, int height, int mouseX, int mouseY) {
+        PoseStack matrices = new PoseStack();
         Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
 
         List<Module> allModules;
@@ -277,18 +281,18 @@ public final class ClickGui extends Screen {
 
             float targetAnimation = isEnabled ? 1f : (isHovered ? 0.2f : 0f);
             float currentAnimation = animationManager.getModuleAnimation(module);
-            float newAnimation = MathHelper.lerp(0.12f, currentAnimation, targetAnimation);
+            float newAnimation = Mth.lerp(0.12f, currentAnimation, targetAnimation);
             animationManager.setModuleAnimation(module, newAnimation);
 
             float targetDropdown = moduleExpanded.get(module) ? 1f : 0f;
             float currentDropdown = animationManager.getDropdownAnimation(module);
-            float newDropdown = MathHelper.lerp(0.15f, currentDropdown, targetDropdown);
+            float newDropdown = Mth.lerp(0.15f, currentDropdown, targetDropdown);
             animationManager.setDropdownAnimation(module, newDropdown);
 
             Color bgColor = isHovered ? applyAlpha(theme.panelAltBg(), 220) : applyAlpha(theme.panelBg(), 140);
         context.fill(x + PADDING, moduleY, x + width - PADDING, moduleY + MODULE_HEIGHT, bgColor.getRGB());
         // draw a subtle border so modules keep their box outline under themes
-        context.drawBorder(x + PADDING, moduleY, width - PADDING * 2, MODULE_HEIGHT, applyAlpha(theme.muted(), 120).getRGB());
+        context.outline(x + PADDING, moduleY, width - PADDING * 2, MODULE_HEIGHT, applyAlpha(theme.muted(), 120).getRGB());
             int indicatorAlpha = isEnabled ? (int) (newAnimation * 255) : 0;
             if (indicatorAlpha > 0) {
                 Color indicator = applyAlpha(theme.accent(), indicatorAlpha);
@@ -332,8 +336,8 @@ public final class ClickGui extends Screen {
         eventHandler.updateMaxScrollOffset(totalContentHeight, visibleHeight);
     }
 
-    private void renderConfigContent(DrawContext context, int x, int y, int width, int height, int mouseX, int mouseY) {
-        MatrixStack matrices = context.getMatrices();
+    private void renderConfigContent(GuiGraphicsExtractor context, int x, int y, int width, int height, int mouseX, int mouseY) {
+        PoseStack matrices = new PoseStack();
         int startY = y + HEADER_HEIGHT + PADDING - eventHandler.getScrollOffset();
         int currentY = startY;
 
@@ -382,7 +386,7 @@ public final class ClickGui extends Screen {
         eventHandler.updateMaxScrollOffset(totalContentHeight, visibleHeight);
     }
 
-    private void renderConfigButton(DrawContext context, int x, int y, int width, int height, String text, Color baseColor, int mouseX, int mouseY) {
+    private void renderConfigButton(GuiGraphicsExtractor context, int x, int y, int width, int height, String text, Color baseColor, int mouseX, int mouseY) {
         boolean isHovered = mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
         // clamp RGB so hovering doesn't produce values >255 which throws IllegalArgumentException
         Color buttonColor;
@@ -400,14 +404,14 @@ public final class ClickGui extends Screen {
         int textX = x + (width - (int) smallFont.getStringWidth(text)) / 2;
         int textY = y + (height - 12) / 2;
         Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
-        smallFont.drawString(context.getMatrices(), text, textX, textY, theme.text());
+        context.text(Minecraft.getInstance().font, text, textX, textY, theme.text().getRGB(), false);
     }
 
     private List<Module> filterModulesBySearch(List<Module> modules) {
         return SearchUtils.filterModulesBySearch(modules, eventHandler.getSearchQuery());
     }
 
-    private int renderModuleSettings(DrawContext context, Module module, int x, int moduleY, int width, float animation) {
+    private int renderModuleSettings(GuiGraphicsExtractor context, Module module, int x, int moduleY, int width, float animation) {
         return SettingsRenderer.renderModuleSettings(context, module, x, moduleY, width, animation, smallFont, eventHandler.getDropdownExpanded(), eventHandler);
     }
 
@@ -416,7 +420,10 @@ public final class ClickGui extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button < 0 || button > 8) return false;
 
         if (eventHandler.getSelectedCategory() == Category.CONFIG && handleConfigClick(mouseX, mouseY, button)) {
@@ -436,11 +443,14 @@ public final class ClickGui extends Screen {
         List<Module> modules = filterModulesBySearch(allModules);
 
         return eventHandler.handleMouseClick(mouseX, mouseY, button, width, height, modules) ||
-                super.mouseClicked(mouseX, mouseY, button);
+                super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (colorPickerManager.handleColorPickerDrag(mouseX, mouseY, button, deltaX, deltaY)) {
             return true;
         }
@@ -449,7 +459,10 @@ public final class ClickGui extends Screen {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (colorPickerManager.handleColorPickerRelease(mouseX, mouseY, button)) {
             return true;
         }
@@ -464,7 +477,10 @@ public final class ClickGui extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
+        int modifiers = event.modifiers();
 
         if (configNameFocused) {
             if (keyCode == GLFW.GLFW_KEY_ENTER) {
@@ -494,15 +510,17 @@ public final class ClickGui extends Screen {
             lastScrollOffset = eventHandler.getScrollOffset();
             lastModuleExpanded.clear();
             lastModuleExpanded.putAll(moduleExpanded);
-            close();
+            minecraft.setScreen(null);
             return true;
         }
 
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
+    public boolean charTyped(CharacterEvent event) {
+        char chr = (char) event.codepoint();
+        int modifiers = 0;
         if (configNameFocused && chr >= 32 && chr < 127) {
             if (configName.length() < 20) {
                 configName += chr;
@@ -510,11 +528,11 @@ public final class ClickGui extends Screen {
             return true;
         }
         if (colorPickerManager.handleColorPickerCharTyped(chr)) return true;
-        return eventHandler.handleCharTyped(chr, modifiers) || super.charTyped(chr, modifiers);
+        return eventHandler.handleCharTyped(chr, modifiers) || super.charTyped(event);
     }
 
     @Override
-    public void close() {
+    public void onClose() {
         animationManager.startClosingAnimation();
     }
 

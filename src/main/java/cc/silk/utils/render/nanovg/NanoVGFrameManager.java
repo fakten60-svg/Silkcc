@@ -1,7 +1,7 @@
 package cc.silk.utils.render.nanovg;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
@@ -19,7 +19,7 @@ public class NanoVGFrameManager {
     private static int savedTexture = 0;
 
     public static void beginFrame() {
-        RenderSystem.assertOnRenderThread();
+        
 
         if (!NanoVGContext.isInitialized() || !NanoVGContext.isValid()) {
             NanoVGContext.init();
@@ -30,22 +30,22 @@ public class NanoVGFrameManager {
             return;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.getWindow() == null) {
             return;
         }
 
-        int framebufferWidth = mc.getWindow().getFramebufferWidth();
-        int framebufferHeight = mc.getWindow().getFramebufferHeight();
+        int framebufferWidth = mc.getWindow().getWidth();
+        int framebufferHeight = mc.getWindow().getHeight();
 
         if (framebufferWidth <= 0 || framebufferHeight <= 0) {
             return;
         }
 
         try {
-            RenderSystem.assertOnRenderThreadOrInit();
+            
 
-            mc.getFramebuffer().beginWrite(true);
+            // mc.getMainRenderTarget().beginWrite(true); // removed - no longer needed in 26.1.2
 
             savedVAO = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
             savedArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
@@ -62,8 +62,8 @@ public class NanoVGFrameManager {
             NanoVGContext.assertValid();
             nvgBeginFrame(NanoVGContext.getHandle(), framebufferWidth, framebufferHeight, 1f);
 
-            int scaledWidth = mc.getWindow().getScaledWidth();
-            int scaledHeight = mc.getWindow().getScaledHeight();
+            int scaledWidth = mc.getWindow().getGuiScaledWidth();
+            int scaledHeight = mc.getWindow().getGuiScaledHeight();
             float scaleX = (float) framebufferWidth / (float) scaledWidth;
             float scaleY = (float) framebufferHeight / (float) scaledHeight;
             nvgScale(NanoVGContext.getHandle(), scaleX, scaleY);
@@ -80,7 +80,7 @@ public class NanoVGFrameManager {
             return;
         }
 
-        RenderSystem.assertOnRenderThread();
+        
 
         try {
             NanoVGContext.assertValid();
@@ -92,9 +92,9 @@ public class NanoVGFrameManager {
 
         inFrame = false;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc != null && mc.getFramebuffer() != null) {
-            mc.getFramebuffer().beginWrite(true);
+        Minecraft mc = Minecraft.getInstance();
+        if (mc != null && mc.getMainRenderTarget() != null) {
+            // mc.getMainRenderTarget().beginWrite(true); // removed - no longer needed in 26.1.2
         }
 
         GL11.glEnable(GL11.GL_DEPTH_TEST);

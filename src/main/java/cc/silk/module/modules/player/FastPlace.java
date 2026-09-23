@@ -9,8 +9,8 @@ import cc.silk.module.setting.BooleanSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
 
 public final class FastPlace extends Module {
 
@@ -28,7 +28,7 @@ public final class FastPlace extends Module {
         if (isNull()) return;
 
         if (blocksOnly.getValue()) {
-            ItemStack heldItem = mc.player.getMainHandStack();
+            ItemStack heldItem = mc.player.getMainHandItem();
             if (heldItem.isEmpty() || !(heldItem.getItem() instanceof BlockItem)) {
                 return;
             }

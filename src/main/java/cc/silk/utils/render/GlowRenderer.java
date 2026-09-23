@@ -1,9 +1,10 @@
 package cc.silk.utils.render;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.vertex.PoseStack;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
@@ -59,17 +60,17 @@ public class GlowRenderer {
         initialized = true;
     }
 
-    public static void drawGlowBorder(MatrixStack matrices, float x, float y, float width, float height,
+    public static void drawGlowBorder(PoseStack matrices, float x, float y, float width, float height,
             float radius, Color color) {
         drawGlowBorder(matrices, x, y, width, height, radius, color, 1.0f, 10.0f, 15.0f);
     }
 
-    public static void drawGlowBorder(MatrixStack matrices, float x, float y, float width, float height,
+    public static void drawGlowBorder(PoseStack matrices, float x, float y, float width, float height,
             float radius, Color color, float intensity) {
         drawGlowBorder(matrices, x, y, width, height, radius, color, intensity, 10.0f, 15.0f);
     }
 
-    public static void drawGlowBorder(MatrixStack matrices, float x, float y, float width, float height,
+    public static void drawGlowBorder(PoseStack matrices, float x, float y, float width, float height,
             float radius, Color color, float glowIntensity,
             float glowThickness, float bloomRadius) {
         if (!initialized) {
@@ -85,9 +86,9 @@ public class GlowRenderer {
             return;
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        int screenWidth = mc.getWindow().getScaledWidth();
-        int screenHeight = mc.getWindow().getScaledHeight();
+        Minecraft mc = Minecraft.getInstance();
+        int screenWidth = mc.getWindow().getGuiScaledWidth();
+        int screenHeight = mc.getWindow().getGuiScaledHeight();
 
         int[] currentVAO = new int[1];
         GL11.glGetIntegerv(GL30.GL_VERTEX_ARRAY_BINDING, currentVAO);
@@ -98,13 +99,12 @@ public class GlowRenderer {
         boolean cullEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
 
         try {
-            RenderSystem.enableBlend();
-            RenderSystem.blendFuncSeparate(
-                    GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA,
-                    GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            RenderSystem.disableDepthTest();
-            RenderSystem.depthMask(false);
-            RenderSystem.disableCull();
+            
+            // RenderSystem.blendFuncSeparate removed in 26.1.2 - using GL directly
+            org.lwjgl.opengl.GL14.glBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            
+            
+            
 
             GL30.glBindVertexArray(vao);
 
@@ -129,31 +129,31 @@ public class GlowRenderer {
             GL30.glBindVertexArray(currentVAO[0]);
             GL20.glUseProgram(currentProgram[0]);
 
-            RenderSystem.depthMask(true);
+            
             if (depthTestEnabled) {
-                RenderSystem.enableDepthTest();
+                
             } else {
-                RenderSystem.disableDepthTest();
+                
             }
             if (cullEnabled) {
-                RenderSystem.enableCull();
+                
             } else {
-                RenderSystem.disableCull();
+                
             }
-            RenderSystem.defaultBlendFunc();
+            
             if (!blendEnabled) {
-                RenderSystem.disableBlend();
+                
             }
         }
     }
 
-    public static void drawPulsingGlow(MatrixStack matrices, float x, float y, float width, float height,
+    public static void drawPulsingGlow(PoseStack matrices, float x, float y, float width, float height,
             float radius, Color color, double time) {
         float pulseFactor = (float) (0.7f + 0.3f * Math.sin(time * 2.0));
         drawGlowBorder(matrices, x, y, width, height, radius, color, pulseFactor, 10.0f, 15.0f);
     }
 
-    public static void drawIntenseGlow(MatrixStack matrices, float x, float y, float width, float height,
+    public static void drawIntenseGlow(PoseStack matrices, float x, float y, float width, float height,
             float radius, Color color) {
         drawGlowBorder(matrices, x, y, width, height, radius, color, 0.8f, 8.0f, 12.0f);
         drawGlowBorder(matrices, x, y, width, height, radius, color, 0.6f, 12.0f, 20.0f);

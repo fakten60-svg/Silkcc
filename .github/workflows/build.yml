@@ -22,8 +22,8 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
-          distribution: "graalvm"
-          java-version: 21
+          distribution: "temurin"
+          java-version: 25
           cache: gradle
 
       - name: Build project

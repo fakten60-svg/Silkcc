@@ -8,8 +8,8 @@ import cc.silk.module.setting.BooleanSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.mc.InventoryUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.Items;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.item.Items;
+import net.minecraft.core.BlockPos;
 
 public final class AutoMLG extends Module {
     private final NumberSetting fallDistance = new NumberSetting("Fall Distance", 3, 40, 8, 1);
@@ -40,13 +40,13 @@ public final class AutoMLG extends Module {
     }
 
     private void tryStart() {
-        if (mc.player.isOnGround()) return;
-        if (mc.player.isTouchingWater()) return;
+        if (mc.player.onGround()) return;
+        if (mc.player.isInWater()) return;
         if (mc.player.fallDistance < fallDistance.getValue()) return;
-        if (mc.player.getVelocity().y >= -0.6) return;
+        if (mc.player.getDeltaMovement().y >= -0.6) return;
         if (!InventoryUtil.hasItem(Items.WATER_BUCKET)) return;
-        storedSlot = mc.player.getInventory().selectedSlot;
-        storedPitch = mc.player.getPitch();
+        storedSlot = mc.player.getInventory().getSelectedSlot();
+        storedPitch = mc.player.getXRot();
         InventoryUtil.swapToSlot(Items.WATER_BUCKET);
         stage = 1;
         ticks = 0;
@@ -55,11 +55,11 @@ public final class AutoMLG extends Module {
 
     private void handlePlacement() {
         if (!changedPitch) {
-            mc.player.setPitch(89.5f);
+            mc.player.setXRot(89.5f);
             changedPitch = true;
             return;
         }
-        if (mc.player.isOnGround()) {
+        if (mc.player.onGround()) {
             stage = 3;
             return;
         }
@@ -75,7 +75,7 @@ public final class AutoMLG extends Module {
 
     private void handlePickup() {
         ticks++;
-        if (!mc.player.isOnGround() && !mc.player.isTouchingWater()) return;
+        if (!mc.player.onGround() && !mc.player.isInWater()) return;
         if (ticks < 3) return;
         InventoryUtil.swapToSlot(Items.BUCKET);
         ((MinecraftClientAccessor) mc).invokeDoItemUse();
@@ -84,10 +84,10 @@ public final class AutoMLG extends Module {
 
     private void finishSequence() {
         if (storedSlot >= 0) {
-            mc.player.getInventory().selectedSlot = storedSlot;
+            mc.player.getInventory().setSelectedSlot(storedSlot);
         }
         if (changedPitch) {
-            mc.player.setPitch(storedPitch);
+            mc.player.setXRot(storedPitch);
         }
         stage = 0;
         ticks = 0;
@@ -103,10 +103,10 @@ public final class AutoMLG extends Module {
 
     private int findGroundDistance() {
         if (isNull()) return 6;
-        BlockPos base = mc.player.getBlockPos();
+        BlockPos base = mc.player.blockPosition();
         for (int i = 1; i <= 6; i++) {
-            BlockPos check = base.down(i);
-            if (!mc.world.getBlockState(check).isAir()) {
+            BlockPos check = base.below(i);
+            if (!mc.level.getBlockState(check).isAir()) {
                 return i;
             }
         }

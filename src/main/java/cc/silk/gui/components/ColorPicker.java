@@ -1,13 +1,16 @@
 package cc.silk.gui.components;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import cc.silk.utils.render.RenderCompat;
 import cc.silk.module.setting.ColorSetting;
 import cc.silk.gui.theme.Theme;
 import cc.silk.gui.theme.ThemeManager;
 import cc.silk.module.modules.client.ClickGUIModule;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.*;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.rendertype.*;
+import com.mojang.blaze3d.vertex.*;
 import cc.silk.utils.render.CompatShaders;
 import org.joml.Matrix4f;
 
@@ -49,7 +52,7 @@ public class ColorPicker {
         this.colorSetting = null;
     }
 
-    public void render(DrawContext context, int x, int y, int mouseX, int mouseY) {
+    public void render(GuiGraphicsExtractor context, int x, int y, int mouseX, int mouseY) {
         this.posX = x;
         this.posY = y;
         
@@ -74,12 +77,12 @@ public class ColorPicker {
         renderControls(context, x, y + SIZE + 10, mouseX, mouseY);
     }
 
-    private void renderColorSquare(DrawContext context, int x, int y) {
+    private void renderColorSquare(GuiGraphicsExtractor context, int x, int y) {
         setupRendering(context);
 
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
-        Matrix4f matrix = context.getMatrices().peek().getPositionMatrix();
+        Tesselator tessellator = Tesselator.getInstance();
+        BufferBuilder buffer = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        Matrix4f matrix = new Matrix4f();
 
         float brightness = colorSetting.getHSB()[2];
         int steps = 50;
@@ -106,14 +109,14 @@ public class ColorPicker {
         finishRendering(buffer, context, x, y, SIZE, SIZE);
     }
 
-    private void renderGradientBar(DrawContext context, int x, int y, int height, boolean isBrightness) {
+    private void renderGradientBar(GuiGraphicsExtractor context, int x, int y, int height, boolean isBrightness) {
         if (!isBrightness) renderCheckerboard(context, x, y, BAR_WIDTH, height);
 
         setupRendering(context);
 
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
-        Matrix4f matrix = context.getMatrices().peek().getPositionMatrix();
+        Tesselator tessellator = Tesselator.getInstance();
+        BufferBuilder buffer = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        Matrix4f matrix = new Matrix4f();
 
         float[] hsb = colorSetting.getHSB();
         Color baseColor = colorSetting.getValue();
@@ -138,16 +141,16 @@ public class ColorPicker {
         finishRendering(buffer, context, x, y, BAR_WIDTH, height);
     }
 
-    private void renderColorPreview(DrawContext context, int x, int y) {
+    private void renderColorPreview(GuiGraphicsExtractor context, int x, int y) {
         if (colorSetting.isHasAlpha()) renderCheckerboard(context, x, y, PREVIEW_SIZE, PREVIEW_SIZE);
 
         Color color = colorSetting.getValue();
         context.fill(x, y, x + PREVIEW_SIZE, y + PREVIEW_SIZE, color.getRGB());
         Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
-        context.drawBorder(x, y, PREVIEW_SIZE, PREVIEW_SIZE, applyAlpha(theme.muted(), 200).getRGB());
+        context.outline(x, y, PREVIEW_SIZE, PREVIEW_SIZE, applyAlpha(theme.muted(), 200).getRGB());
     }
 
-    private void renderSelectionIndicators(DrawContext context, int x, int y) {
+    private void renderSelectionIndicators(GuiGraphicsExtractor context, int x, int y) {
         float[] hsb = colorSetting.getHSB();
 
         int squareX = (int) (x + hsb[0] * SIZE), squareY = (int) (y + hsb[1] * SIZE);
@@ -164,7 +167,7 @@ public class ColorPicker {
         }
     }
 
-    private void renderCheckerboard(DrawContext context, int x, int y, int width, int height) {
+    private void renderCheckerboard(GuiGraphicsExtractor context, int x, int y, int width, int height) {
         Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
         Color light = applyAlpha(theme.panelAltBg(), 220);
         Color dark = applyAlpha(theme.panelBg(), 200);
@@ -178,36 +181,36 @@ public class ColorPicker {
     }
 
 
-    private void setupRendering(DrawContext context) {
-        context.getMatrices().push();
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+    private void setupRendering(GuiGraphicsExtractor context) {
+        context.pose().pushMatrix();
+        
+        
         CompatShaders.usePositionColor();
     }
 
-    private void finishRendering(BufferBuilder buffer, DrawContext context, int x, int y, int width, int height) {
-        BufferRenderer.drawWithGlobalProgram(buffer.end());
-        RenderSystem.disableBlend();
-        context.getMatrices().pop();
+    private void finishRendering(BufferBuilder buffer, GuiGraphicsExtractor context, int x, int y, int width, int height) {
+        RenderCompat.draw(buffer);
+        
+        context.pose().popMatrix();
         Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
-        context.drawBorder(x, y, width, height, applyAlpha(theme.muted(), 200).getRGB());
+        context.outline(x, y, width, height, applyAlpha(theme.muted(), 200).getRGB());
     }
 
     private void addQuad(BufferBuilder buffer, Matrix4f matrix, float[] xs, float[] ys, Color[] colors) {
-        buffer.vertex(matrix, xs[0], ys[0], 0).color(colors[0].getRed(), colors[0].getGreen(), colors[0].getBlue(), 255);
-        buffer.vertex(matrix, xs[1], ys[0], 0).color(colors[1].getRed(), colors[1].getGreen(), colors[1].getBlue(), 255);
-        buffer.vertex(matrix, xs[1], ys[1], 0).color(colors[2].getRed(), colors[2].getGreen(), colors[2].getBlue(), 255);
-        buffer.vertex(matrix, xs[0], ys[1], 0).color(colors[3].getRed(), colors[3].getGreen(), colors[3].getBlue(), 255);
+        buffer.addVertex(matrix, xs[0], ys[0], 0).setColor(colors[0].getRed(), colors[0].getGreen(), colors[0].getBlue(), 255);
+        buffer.addVertex(matrix, xs[1], ys[0], 0).setColor(colors[1].getRed(), colors[1].getGreen(), colors[1].getBlue(), 255);
+        buffer.addVertex(matrix, xs[1], ys[1], 0).setColor(colors[2].getRed(), colors[2].getGreen(), colors[2].getBlue(), 255);
+        buffer.addVertex(matrix, xs[0], ys[1], 0).setColor(colors[3].getRed(), colors[3].getGreen(), colors[3].getBlue(), 255);
     }
 
     private void addRect(BufferBuilder buffer, Matrix4f matrix, float x1, float y1, float x2, float y2, Color color1, Color color2) {
-        buffer.vertex(matrix, x1, y1, 0).color(color1.getRed(), color1.getGreen(), color1.getBlue(), color1.getAlpha());
-        buffer.vertex(matrix, x2, y1, 0).color(color1.getRed(), color1.getGreen(), color1.getBlue(), color1.getAlpha());
-        buffer.vertex(matrix, x2, y2, 0).color(color2.getRed(), color2.getGreen(), color2.getBlue(), color2.getAlpha());
-        buffer.vertex(matrix, x1, y2, 0).color(color2.getRed(), color2.getGreen(), color2.getBlue(), color2.getAlpha());
+        buffer.addVertex(matrix, x1, y1, 0).setColor(color1.getRed(), color1.getGreen(), color1.getBlue(), color1.getAlpha());
+        buffer.addVertex(matrix, x2, y1, 0).setColor(color1.getRed(), color1.getGreen(), color1.getBlue(), color1.getAlpha());
+        buffer.addVertex(matrix, x2, y2, 0).setColor(color2.getRed(), color2.getGreen(), color2.getBlue(), color2.getAlpha());
+        buffer.addVertex(matrix, x1, y2, 0).setColor(color2.getRed(), color2.getGreen(), color2.getBlue(), color2.getAlpha());
     }
 
-    private void drawCrosshair(DrawContext context, int x, int y) {
+    private void drawCrosshair(GuiGraphicsExtractor context, int x, int y) {
         Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
         context.fill(x - 5, y - 1, x + 5, y + 1, theme.accent().getRGB());
         context.fill(x - 1, y - 5, x + 1, y + 5, theme.accent().getRGB());
@@ -215,7 +218,7 @@ public class ColorPicker {
         context.fill(x - 2, y - 6, x + 2, y + 6, applyAlpha(theme.muted(), 200).getRGB());
     }
 
-    private void drawBarIndicator(DrawContext context, int x, int y, int width) {
+    private void drawBarIndicator(GuiGraphicsExtractor context, int x, int y, int width) {
         Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
         context.fill(x - 2, y - 1, x + width + 2, y + 1, theme.accent().getRGB());
         context.fill(x - 3, y - 2, x + width + 3, y + 2, applyAlpha(theme.muted(), 200).getRGB());
@@ -371,7 +374,7 @@ public class ColorPicker {
         colorSetting.setValue(color.getRed(), color.getGreen(), color.getBlue(), (int) (alpha * 255));
     }
 
-    private void renderControls(DrawContext context, int x, int y, int mouseX, int mouseY) {
+    private void renderControls(GuiGraphicsExtractor context, int x, int y, int mouseX, int mouseY) {
     updateInputsFromColor();
 
     Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
@@ -381,7 +384,7 @@ public class ColorPicker {
     int textColor = theme.text().getRGB();
 
 
-        context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, "HEX", x, rowY + 3, textColor);
+        context.text(Minecraft.getInstance().font, "HEX", x, rowY + 3, textColor);
         hexX = x + 28;
         hexY = rowY;
         hexW = totalW - 28;
@@ -397,7 +400,7 @@ public class ColorPicker {
         int sliderH = 8;
 
 
-        context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, "R", x, rowY + 3, textColor);
+        context.text(Minecraft.getInstance().font, "R", x, rowY + 3, textColor);
         rSliderX = sliderX;
         rSliderY = rowY + (CONTROL_HEIGHT - sliderH) / 2;
         rSliderW = sliderW;
@@ -411,7 +414,7 @@ public class ColorPicker {
         rowY += CONTROL_HEIGHT + CONTROL_SPACING;
 
 
-        context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, "G", x, rowY + 3, textColor);
+        context.text(Minecraft.getInstance().font, "G", x, rowY + 3, textColor);
         gSliderX = sliderX;
         gSliderY = rowY + (CONTROL_HEIGHT - sliderH) / 2;
         gSliderW = sliderW;
@@ -425,7 +428,7 @@ public class ColorPicker {
         rowY += CONTROL_HEIGHT + CONTROL_SPACING;
 
 
-        context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, "B", x, rowY + 3, textColor);
+        context.text(Minecraft.getInstance().font, "B", x, rowY + 3, textColor);
         bSliderX = sliderX;
         bSliderY = rowY + (CONTROL_HEIGHT - sliderH) / 2;
         bSliderW = sliderW;
@@ -439,7 +442,7 @@ public class ColorPicker {
         rowY += CONTROL_HEIGHT + CONTROL_SPACING;
 
         if (colorSetting.isHasAlpha()) {
-            context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, "A", x, rowY + 3, textColor);
+            context.text(Minecraft.getInstance().font, "A", x, rowY + 3, textColor);
             aSliderX = sliderX;
             aSliderY = rowY + (CONTROL_HEIGHT - sliderH) / 2;
             aSliderW = sliderW;
@@ -453,13 +456,13 @@ public class ColorPicker {
         }
     }
 
-    private void drawTextField(DrawContext ctx, int x, int y, int w, int h, String text, boolean focused) {
+    private void drawTextField(GuiGraphicsExtractor ctx, int x, int y, int w, int h, String text, boolean focused) {
         Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
         Color bg = focused ? applyAlpha(theme.panelAltBg(), 240) : applyAlpha(theme.panelBg(), 220);
         ctx.fill(x, y, x + w, y + h, bg.getRGB());
-        ctx.drawBorder(x, y, w, h, applyAlpha(theme.muted(), 200).getRGB());
+        ctx.outline(x, y, w, h, applyAlpha(theme.muted(), 200).getRGB());
         int color = theme.text().getRGB();
-        ctx.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, text, x + 5, y + (h - 8) / 2, color);
+        ctx.text(Minecraft.getInstance().font, text, x + 5, y + (h - 8) / 2, color);
     }
 
     private void updateInputsFromColor() {
@@ -638,7 +641,7 @@ public class ColorPicker {
         this.expanded = !this.expanded;
     }
 
-    public void renderCompact(DrawContext context, int x, int y, int width, int height) {
+    public void renderCompact(GuiGraphicsExtractor context, int x, int y, int width, int height) {
         this.posX = x;
         this.posY = y;
 
@@ -659,14 +662,14 @@ public class ColorPicker {
         renderSelectionIndicatorsCompact(context, x, y, size, barWidth, spacing);
     }
 
-    private void renderColorSquareCompact(DrawContext context, int x, int y, int size) {
+    private void renderColorSquareCompact(GuiGraphicsExtractor context, int x, int y, int size) {
         if (colorSetting == null) return;
 
         setupRendering(context);
 
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
-        Matrix4f matrix = context.getMatrices().peek().getPositionMatrix();
+        Tesselator tessellator = Tesselator.getInstance();
+        BufferBuilder buffer = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        Matrix4f matrix = new Matrix4f();
 
         float brightness = colorSetting.getHSB()[2];
         int steps = 25;
@@ -693,16 +696,16 @@ public class ColorPicker {
         finishRendering(buffer, context, x, y, size, size);
     }
 
-    private void renderGradientBarCompact(DrawContext context, int x, int y, int height, int barWidth, boolean isBrightness) {
+    private void renderGradientBarCompact(GuiGraphicsExtractor context, int x, int y, int height, int barWidth, boolean isBrightness) {
         if (colorSetting == null) return;
 
         if (!isBrightness) renderCheckerboard(context, x, y, barWidth, height);
 
         setupRendering(context);
 
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
-        Matrix4f matrix = context.getMatrices().peek().getPositionMatrix();
+        Tesselator tessellator = Tesselator.getInstance();
+        BufferBuilder buffer = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        Matrix4f matrix = new Matrix4f();
 
         float[] hsb = colorSetting.getHSB();
         Color baseColor = colorSetting.getValue();
@@ -727,7 +730,7 @@ public class ColorPicker {
         finishRendering(buffer, context, x, y, barWidth, height);
     }
 
-    private void renderSelectionIndicatorsCompact(DrawContext context, int x, int y, int size, int barWidth, int spacing) {
+    private void renderSelectionIndicatorsCompact(GuiGraphicsExtractor context, int x, int y, int size, int barWidth, int spacing) {
         if (colorSetting == null) return;
 
         float[] hsb = colorSetting.getHSB();

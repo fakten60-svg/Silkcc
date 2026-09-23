@@ -23,8 +23,8 @@ public final class ProfileManager {
     private final ModuleManager moduleManager = SilkClient.INSTANCE != null ? SilkClient.INSTANCE.getModuleManager() : null;
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     @Getter
-    private final File profileDir = SilkClient.mc != null && SilkClient.mc.runDirectory != null
-            ? new File(SilkClient.mc.runDirectory, "Silk" + File.separator + "profiles")
+    private final File profileDir = SilkClient.mc != null && SilkClient.mc.gameDirectory != null
+            ? new File(SilkClient.mc.gameDirectory, "Silk" + File.separator + "profiles")
             : new File("profiles");
 
     public ProfileManager() {

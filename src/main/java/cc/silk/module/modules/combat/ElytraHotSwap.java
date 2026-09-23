@@ -10,9 +10,10 @@ import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.keybinding.KeyUtils;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.Hand;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.InteractionHand;
 import org.lwjgl.glfw.GLFW;
 
 public final class ElytraHotSwap extends Module {
@@ -84,12 +85,12 @@ public final class ElytraHotSwap extends Module {
             if (elytraSlot == -1) return;
 
             if (!hasElytraEquipped) {
-                previousChestArmor = mc.player.getInventory().getArmorStack(2).copy();
+                previousChestArmor = mc.player.getItemBySlot(EquipmentSlot.CHEST).copy();
             }
         }
 
         isSwapping = true;
-        originalSlot = mc.player.getInventory().selectedSlot;
+        originalSlot = mc.player.getInventory().getSelectedSlot();
         currentState = SwapState.SWITCHING_TO_ITEM;
         swapTimer.reset();
     }
@@ -114,7 +115,7 @@ public final class ElytraHotSwap extends Module {
         }
 
         if (!silentSwap.getValue()) {
-            mc.player.getInventory().selectedSlot = targetSlot;
+            mc.player.getInventory().setSelectedSlot(targetSlot);
         }
 
         currentState = SwapState.EQUIPPING_ITEM;
@@ -137,30 +138,30 @@ public final class ElytraHotSwap extends Module {
     }
 
     private void equipElytra() {
-        int elytraSlot = silentSwap.getValue() ? findElytraInHotbar() : mc.player.getInventory().selectedSlot;
+        int elytraSlot = silentSwap.getValue() ? findElytraInHotbar() : mc.player.getInventory().getSelectedSlot();
         if (elytraSlot == -1) {
             finishHotswap();
             return;
         }
 
-        ItemStack elytraStack = mc.player.getInventory().getStack(elytraSlot);
+        ItemStack elytraStack = mc.player.getInventory().getItem(elytraSlot);
         if (elytraStack.isEmpty() || elytraStack.getItem() != Items.ELYTRA) {
             finishHotswap();
             return;
         }
 
         if (silentSwap.getValue()) {
-            int currentSlot = mc.player.getInventory().selectedSlot;
-            mc.player.getInventory().selectedSlot = elytraSlot;
+            int currentSlot = mc.player.getInventory().getSelectedSlot();
+            mc.player.getInventory().setSelectedSlot(elytraSlot);
 
-            if (mc.interactionManager != null) {
-                mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
+            if (mc.gameMode != null) {
+                mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
             }
 
-            mc.player.getInventory().selectedSlot = currentSlot;
+            mc.player.getInventory().setSelectedSlot(currentSlot);
         } else {
-            if (mc.interactionManager != null) {
-                mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
+            if (mc.gameMode != null) {
+                mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
             }
         }
     }
@@ -169,20 +170,20 @@ public final class ElytraHotSwap extends Module {
         int chestplateSlot = findChestplateInHotbar();
 
         if (chestplateSlot != -1) {
-            ItemStack chestplateStack = mc.player.getInventory().getStack(chestplateSlot);
+            ItemStack chestplateStack = mc.player.getInventory().getItem(chestplateSlot);
             if (!chestplateStack.isEmpty() && isChestplate(chestplateStack)) {
                 if (silentSwap.getValue()) {
-                    int currentSlot = mc.player.getInventory().selectedSlot;
-                    mc.player.getInventory().selectedSlot = chestplateSlot;
+                    int currentSlot = mc.player.getInventory().getSelectedSlot();
+                    mc.player.getInventory().setSelectedSlot(chestplateSlot);
 
-                    if (mc.interactionManager != null) {
-                        mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
+                    if (mc.gameMode != null) {
+                        mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
                     }
 
-                    mc.player.getInventory().selectedSlot = currentSlot;
+                    mc.player.getInventory().setSelectedSlot(currentSlot);
                 } else {
-                    if (mc.interactionManager != null) {
-                        mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
+                    if (mc.gameMode != null) {
+                        mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
                     }
                 }
                 return;
@@ -190,10 +191,10 @@ public final class ElytraHotSwap extends Module {
         }
 
         if (!previousChestArmor.isEmpty()) {
-            mc.player.getInventory().setStack(36 + mc.player.getInventory().selectedSlot, previousChestArmor.copy());
+            mc.player.getInventory().setItem(36 + mc.player.getInventory().getSelectedSlot(), previousChestArmor.copy());
 
-            if (mc.interactionManager != null) {
-                mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
+            if (mc.gameMode != null) {
+                mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
             }
 
             previousChestArmor = ItemStack.EMPTY;
@@ -202,7 +203,7 @@ public final class ElytraHotSwap extends Module {
 
     private void handleSwitchingBack() {
         if (originalSlot != -1) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
         }
         finishHotswap();
     }
@@ -216,7 +217,7 @@ public final class ElytraHotSwap extends Module {
 
     private int findElytraInHotbar() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (!stack.isEmpty() && stack.getItem() == Items.ELYTRA) {
                 return i;
             }
@@ -226,7 +227,7 @@ public final class ElytraHotSwap extends Module {
 
     private int findChestplateInHotbar() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (!stack.isEmpty() && isChestplate(stack)) {
                 return i;
             }
@@ -245,7 +246,7 @@ public final class ElytraHotSwap extends Module {
     }
 
     private boolean hasElytraEquipped() {
-        ItemStack chestArmor = mc.player.getInventory().getArmorStack(2);
+        ItemStack chestArmor = mc.player.getItemBySlot(EquipmentSlot.CHEST);
         return !chestArmor.isEmpty() && chestArmor.getItem() == Items.ELYTRA;
     }
 

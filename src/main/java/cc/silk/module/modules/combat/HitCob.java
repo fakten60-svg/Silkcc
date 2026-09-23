@@ -4,15 +4,15 @@ import cc.silk.event.impl.player.AttackEvent;
 import cc.silk.module.Category;
 import cc.silk.module.Module;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Items;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 public class HitCob extends Module {
     private static final double SPEED_STOPPED = 0.05;
@@ -25,22 +25,22 @@ public class HitCob extends Module {
 
     @EventHandler
     private void onAttack(AttackEvent event) {
-        if (isNull() || !(event.getTarget() instanceof PlayerEntity target)) return;
+        if (isNull() || !(event.getTarget() instanceof Player target)) return;
 
         int webSlot = findCobwebInHotbar();
         if (webSlot == -1) return;
 
-        BlockPos feetPos = target.getBlockPos();
+        BlockPos feetPos = target.blockPosition();
 
-        if (mc.world.getBlockState(feetPos).getBlock() == Blocks.COBWEB) return;
-        if (mc.world.getBlockState(feetPos).getBlock() == Blocks.WATER) return;
+        if (mc.level.getBlockState(feetPos).getBlock() == Blocks.COBWEB) return;
+        if (mc.level.getBlockState(feetPos).getBlock() == Blocks.WATER) return;
 
-        double distance = mc.player.getPos().distanceTo(Vec3d.ofCenter(feetPos));
+        double distance = mc.player.position().distanceTo(Vec3.atCenterOf(feetPos));
         if (distance > 4.5) return;
 
-        double targetSpeed = Math.hypot(target.getVelocity().x, target.getVelocity().z);
+        double targetSpeed = Math.hypot(target.getDeltaMovement().x, target.getDeltaMovement().z);
 
-        Vec3d knockbackDirection = target.getPos().subtract(mc.player.getPos()).normalize();
+        Vec3 knockbackDirection = target.position().subtract(mc.player.position()).normalize();
 
         double knockbackDistance;
         if (targetSpeed < SPEED_STOPPED) {
@@ -51,31 +51,31 @@ public class HitCob extends Module {
             knockbackDistance = mc.player.isSprinting() ? 1.2 : 0.8;
         }
 
-        Vec3d predictedPos = target.getPos().add(knockbackDirection.multiply(knockbackDistance));
-        BlockPos predictedFeet = BlockPos.ofFloored(predictedPos);
+        Vec3 predictedPos = target.position().add(knockbackDirection.scale(knockbackDistance));
+        BlockPos predictedFeet = BlockPos.containing(predictedPos.x, predictedPos.y, predictedPos.z);
 
-        if (mc.world.getBlockState(predictedFeet).getBlock() == Blocks.COBWEB) return;
-        if (mc.world.getBlockState(predictedFeet).getBlock() == Blocks.WATER) return;
+        if (mc.level.getBlockState(predictedFeet).getBlock() == Blocks.COBWEB) return;
+        if (mc.level.getBlockState(predictedFeet).getBlock() == Blocks.WATER) return;
 
-        if (!mc.world.getBlockState(predictedFeet).isAir()) {
+        if (!mc.level.getBlockState(predictedFeet).isAir()) {
             predictedFeet = feetPos;
         }
 
-        BlockPos groundPos = predictedFeet.down();
-        if (mc.world.getBlockState(groundPos).isAir()) return;
+        BlockPos groundPos = predictedFeet.below();
+        if (mc.level.getBlockState(groundPos).isAir()) return;
 
-        if (mc.player.getPos().distanceTo(Vec3d.ofCenter(predictedFeet)) > 4.5) return;
+        if (mc.player.position().distanceTo(Vec3.atCenterOf(predictedFeet)) > 4.5) return;
 
-        int originalSlot = mc.player.getInventory().selectedSlot;
-        float originalYaw = mc.player.getYaw();
-        float originalPitch = mc.player.getPitch();
+        int originalSlot = mc.player.getInventory().getSelectedSlot();
+        float originalYaw = mc.player.getYRot();
+        float originalPitch = mc.player.getXRot();
 
-        Vec3d hitVec = Vec3d.ofCenter(groundPos).add(0, 0.5, 0);
+        Vec3 hitVec = Vec3.atCenterOf(groundPos).add(0, 0.5, 0);
         float[] rotation = calculateRotation(hitVec);
 
-        mc.player.setYaw(rotation[0]);
-        mc.player.setPitch(rotation[1]);
-        mc.player.getInventory().selectedSlot = webSlot;
+        mc.player.setYRot(rotation[0]);
+        mc.player.setXRot(rotation[1]);
+        mc.player.getInventory().setSelectedSlot(webSlot);
 
         BlockHitResult hitResult = new BlockHitResult(
                 hitVec,
@@ -84,18 +84,18 @@ public class HitCob extends Module {
                 false
         );
 
-        if (mc.interactionManager != null) {
-            mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, hitResult);
+        if (mc.gameMode != null) {
+            mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
         }
 
-        mc.player.getInventory().selectedSlot = originalSlot;
-        mc.player.setYaw(originalYaw);
-        mc.player.setPitch(originalPitch);
+        mc.player.getInventory().setSelectedSlot(originalSlot);
+        mc.player.setYRot(originalYaw);
+        mc.player.setXRot(originalPitch);
     }
 
     private int findCobwebInHotbar() {
         for (int i = 0; i < 9; i++) {
-            var stack = mc.player.getInventory().getStack(i);
+            var stack = mc.player.getInventory().getItem(i);
             if (!stack.isEmpty() && stack.getItem() == Items.COBWEB) {
                 return i;
             }
@@ -103,12 +103,12 @@ public class HitCob extends Module {
         return -1;
     }
 
-    private float[] calculateRotation(Vec3d target) {
-        Vec3d diff = target.subtract(mc.player.getEyePos());
+    private float[] calculateRotation(Vec3 target) {
+        Vec3 diff = target.subtract(mc.player.getEyePosition());
         double distance = Math.sqrt(diff.x * diff.x + diff.z * diff.z);
         float yaw = (float) Math.toDegrees(Math.atan2(diff.z, diff.x)) - 90.0f;
         float pitch = (float) -Math.toDegrees(Math.atan2(diff.y, distance));
-        return new float[]{MathHelper.wrapDegrees(yaw), MathHelper.clamp(pitch, -89.0f, 89.0f)};
+        return new float[]{Mth.wrapDegrees(yaw), Mth.clamp(pitch, -89.0f, 89.0f)};
     }
 }
 

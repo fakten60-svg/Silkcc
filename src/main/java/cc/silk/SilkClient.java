@@ -10,7 +10,7 @@ import io.github.racoondog.norbit.EventBus;
 import lombok.Getter;
 import meteordevelopment.orbit.IEventBus;
 import net.fabricmc.api.ClientModInitializer;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +21,7 @@ public final class SilkClient implements ClientModInitializer {
     public static final String CLIENT_VERSION = "v1.0";
     public static final boolean shouldUseMouseEvent = System.getProperty("os.name").toLowerCase().contains("windows");
     public static SilkClient INSTANCE;
-    public static MinecraftClient mc;
+    public static Minecraft mc;
     public final IEventBus SilkEventBus;
     public final ModuleManager moduleManager;
     public final FontManager fontManager;
@@ -32,7 +32,7 @@ public final class SilkClient implements ClientModInitializer {
 
     public SilkClient() {
         INSTANCE = this;
-        mc = MinecraftClient.getInstance();
+        mc = Minecraft.getInstance();
         SilkEventBus = EventBus.threadSafe();
         SilkEventBus.registerLambdaFactory("cc.silk", (lookupInMethod, klass) -> (MethodHandles.Lookup) lookupInMethod.invoke(null, klass, MethodHandles.lookup()));
 

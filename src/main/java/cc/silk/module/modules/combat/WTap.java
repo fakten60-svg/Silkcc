@@ -29,14 +29,14 @@ public class WTap extends Module {
     private void onAttackEvent(DoAttackEvent event) {
         if (isNull()) return;
         if (Math.random() * 100 > chance.getValueFloat()) return;
-        var target = mc.targetedEntity;
-        if (!mc.player.isOnGround() && onlyOnGround.getValue()) return;
+        var target = mc.crosshairPickEntity;
+        if (!mc.player.onGround() && onlyOnGround.getValue()) return;
         if (target == null) return;
         if (!target.isAlive()) return;
         if (!KeyUtils.isKeyPressed(GLFW.GLFW_KEY_W)) return;
         if (mc.player.isSprinting()) {
             wasSprinting = true;
-            mc.options.forwardKey.setPressed(false);
+            mc.options.keyUp.setDown(false);
         }
     }
 
@@ -48,7 +48,7 @@ public class WTap extends Module {
 
         if (wasSprinting) {
             if (timer.hasElapsedTime(msDelay.getValueInt(), true)) {
-                mc.options.forwardKey.setPressed(true);
+                mc.options.keyUp.setDown(true);
                 wasSprinting = false;
             }
         }

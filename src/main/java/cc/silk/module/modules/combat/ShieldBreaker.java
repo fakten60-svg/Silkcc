@@ -13,10 +13,10 @@ import cc.silk.utils.math.TimerUtil;
 import cc.silk.utils.mc.CombatUtil;
 import cc.silk.utils.mc.InventoryUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.AxeItem;
-import net.minecraft.item.Items;
-import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.EntityHitResult;
 
 public final class ShieldBreaker extends Module {
     public static boolean breakingShield = false;
@@ -49,7 +49,7 @@ public final class ShieldBreaker extends Module {
     }
 
     private boolean canRun() {
-        if (isNull() || mc.currentScreen != null)
+        if (isNull() || mc.screen != null)
             return false;
         if (!InventoryUtil.hasWeapon(AxeItem.class))
             return false;
@@ -58,12 +58,12 @@ public final class ShieldBreaker extends Module {
         return cpsTimer.hasElapsedTime((long) (1000.0 / cps.getValue()));
     }
 
-    private PlayerEntity getTargetPlayer() {
-        if (!(mc.crosshairTarget instanceof EntityHitResult entityHit))
+    private Player getTargetPlayer() {
+        if (!(mc.hitResult instanceof EntityHitResult entityHit))
             return null;
-        if (!(entityHit.getEntity() instanceof PlayerEntity target))
+        if (!(entityHit.getEntity() instanceof Player target))
             return null;
-        if (FriendManager.isFriend(target.getUuid()) && ignoreFriends.getValue())
+        if (FriendManager.isFriend(target.getUUID()) && ignoreFriends.getValue())
             return null;
         return target;
     }
@@ -82,7 +82,7 @@ public final class ShieldBreaker extends Module {
         if (!canRun())
             return;
 
-        PlayerEntity target = getTargetPlayer();
+        Player target = getTargetPlayer();
         if (target == null)
             return;
 
@@ -93,18 +93,18 @@ public final class ShieldBreaker extends Module {
 
         if (isBlocking && canBreak && shouldActivate) {
 
-            if (!(mc.player.getMainHandStack().getItem() instanceof AxeItem)) {
+            if (!(mc.player.getMainHandItem().getItem() instanceof AxeItem)) {
                 if (reactionTimer.hasElapsedTime(reactionDelay.getValueInt())
                         && swapTimer.hasElapsedTime(swapDelay.getValueInt())) {
                     breakingShield = true;
                     if (savedSlot == -1)
-                        savedSlot = mc.player.getInventory().selectedSlot;
+                        savedSlot = mc.player.getInventory().getSelectedSlot();
                     InventoryUtil.swapToWeapon(AxeItem.class);
                     attackTimer.reset();
                 }
             }
 
-            if (mc.player.getMainHandStack().getItem() instanceof AxeItem) {
+            if (mc.player.getMainHandItem().getItem() instanceof AxeItem) {
                 if (attackTimer.hasElapsedTime(attackDelay.getValueInt()) || savedSlot == -1) {
                     ((MinecraftClientAccessor) mc).invokeDoAttack();
                     cpsTimer.reset();
@@ -121,7 +121,7 @@ public final class ShieldBreaker extends Module {
 
             if (savedSlot != -1 && swapBackTimer.hasElapsedTime(swapBackDelay.getValueInt())) {
                 if (revertSlot.getValue())
-                    mc.player.getInventory().selectedSlot = savedSlot;
+                    mc.player.getInventory().setSelectedSlot(savedSlot);
                 savedSlot = -1;
             }
         }
@@ -130,7 +130,7 @@ public final class ShieldBreaker extends Module {
     @Override
     public void onDisable() {
         if (savedSlot != -1 && revertSlot.getValue()) {
-            mc.player.getInventory().selectedSlot = savedSlot;
+            mc.player.getInventory().setSelectedSlot(savedSlot);
         }
         savedSlot = -1;
         breakingShield = false;

@@ -10,7 +10,7 @@ import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.keybinding.KeyUtils;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.Items;
+import net.minecraft.world.item.Items;
 import org.lwjgl.glfw.GLFW;
 
 public final class WindChargeKey extends Module {
@@ -32,7 +32,7 @@ public final class WindChargeKey extends Module {
 
     @EventHandler
     private void onTickEvent(TickEvent event) {
-        if (isNull() || mc.currentScreen != null) return;
+        if (isNull() || mc.screen != null) return;
 
         boolean currentKeyState = KeyUtils.isKeyPressed(windChargeKeybind.getKeyCode());
 
@@ -42,7 +42,7 @@ public final class WindChargeKey extends Module {
         }
 
         if (needsSwitchBack && switchTimer.hasElapsedTime(switchDelay.getValueInt())) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
             needsSwitchBack = false;
             originalSlot = -1;
         }
@@ -54,16 +54,16 @@ public final class WindChargeKey extends Module {
         int windChargeSlot = findWindChargeSlot();
         if (windChargeSlot == -1) return;
 
-        if (mc.player.getItemCooldownManager().isCoolingDown(new net.minecraft.item.ItemStack(Items.WIND_CHARGE))) {
+        if (mc.player.getCooldowns().isOnCooldown(new net.minecraft.world.item.ItemStack(Items.WIND_CHARGE))) {
             return;
         }
 
-        if (autoJump.getValue() && mc.player.isOnGround()) {
-            mc.player.jump();
+        if (autoJump.getValue() && mc.player.onGround()) {
+            mc.player.jumpFromGround();
         }
 
-        originalSlot = mc.player.getInventory().selectedSlot;
-        mc.player.getInventory().selectedSlot = windChargeSlot;
+        originalSlot = mc.player.getInventory().getSelectedSlot();
+        mc.player.getInventory().setSelectedSlot(windChargeSlot);
         ((MinecraftClientAccessor) mc).invokeDoItemUse();
         needsSwitchBack = true;
         switchTimer.reset();
@@ -71,7 +71,7 @@ public final class WindChargeKey extends Module {
 
     private int findWindChargeSlot() {
         for (int i = 0; i < 9; i++) {
-            if (mc.player.getInventory().getStack(i).getItem() == Items.WIND_CHARGE) {
+            if (mc.player.getInventory().getItem(i).getItem() == Items.WIND_CHARGE) {
                 return i;
             }
         }

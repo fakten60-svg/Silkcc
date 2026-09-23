@@ -8,16 +8,16 @@ import cc.silk.module.setting.BooleanSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.friend.FriendManager;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
 
 public class StunCob extends Module {
     
@@ -55,7 +55,7 @@ public class StunCob extends Module {
         
         if (requireCobweb.getValue() && !hasCobwebInInventory()) return;
         
-        Vec3d predictedPos = predictLandingPosition(lastHitTarget);
+        Vec3 predictedPos = predictLandingPosition(lastHitTarget);
         if (predictedPos != null) {
             placeCobwebAtPosition(predictedPos);
         }
@@ -63,15 +63,15 @@ public class StunCob extends Module {
         lastHitTarget = null;
     }
     
-    private Vec3d predictLandingPosition(Entity target) {
+    private Vec3 predictLandingPosition(Entity target) {
         if (!(target instanceof LivingEntity)) return null;
         
-        Vec3d currentPos = target.getPos();
-        Vec3d velocity = target.getVelocity();
+        Vec3 currentPos = target.position();
+        Vec3 velocity = target.getDeltaMovement();
         
         boolean isSprinting = mc.player.isSprinting();
         double knockbackMultiplier = isSprinting ? 1.5 : 1.0;
-        Vec3d adjustedVelocity = new Vec3d(
+        Vec3 adjustedVelocity = new Vec3(
             velocity.x * knockbackMultiplier,
             velocity.y,
             velocity.z * knockbackMultiplier
@@ -81,19 +81,19 @@ public class StunCob extends Module {
         double gravity = 0.08;
         double airResistance = 0.98;
         
-        Vec3d predictedPos = currentPos;
-        Vec3d predictedVel = adjustedVelocity;
+        Vec3 predictedPos = currentPos;
+        Vec3 predictedVel = adjustedVelocity;
         
         for (double t = 0; t < predictionTime; t += 0.05) {
-            predictedVel = new Vec3d(
+            predictedVel = new Vec3(
                 predictedVel.x * airResistance,
                 predictedVel.y - gravity * 0.05,
                 predictedVel.z * airResistance
             );
-            predictedPos = predictedPos.add(predictedVel.multiply(0.05));
+            predictedPos = predictedPos.add(predictedVel.scale(0.05));
             
             if (predictedPos.y <= 0) {
-                predictedPos = new Vec3d(predictedPos.x, 0, predictedPos.z);
+                predictedPos = new Vec3(predictedPos.x, 0, predictedPos.z);
                 break;
             }
         }
@@ -101,23 +101,23 @@ public class StunCob extends Module {
         BlockPos blockPos = new BlockPos((int) Math.floor(predictedPos.x), (int) Math.floor(predictedPos.y), (int) Math.floor(predictedPos.z));
         
         if (canPlaceCobweb(blockPos)) {
-            return new Vec3d(blockPos.getX() + 0.5, blockPos.getY(), blockPos.getZ() + 0.5);
+            return new Vec3(blockPos.getX() + 0.5, blockPos.getY(), blockPos.getZ() + 0.5);
         }
         
         return null;
     }
     
     private boolean canPlaceCobweb(BlockPos pos) {
-        if (mc.world == null) return false;
+        if (mc.level == null) return false;
         
-        if (!mc.world.getBlockState(pos).isAir()) return false;
-        if (!mc.world.getBlockState(pos.down()).isSolidBlock(mc.world, pos.down())) return false;
+        if (!mc.level.getBlockState(pos).isAir()) return false;
+        if (!mc.level.getBlockState(pos.below()).isSolidRender()) return false;
         
-        double distance = mc.player.getPos().distanceTo(new Vec3d(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5));
+        double distance = mc.player.position().distanceTo(new Vec3(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5));
         return distance <= 4.5;
     }
     
-    private void placeCobwebAtPosition(Vec3d pos) {
+    private void placeCobwebAtPosition(Vec3 pos) {
         BlockPos blockPos = new BlockPos((int) Math.floor(pos.x), (int) Math.floor(pos.y), (int) Math.floor(pos.z));
         
         if (!canPlaceCobweb(blockPos)) return;
@@ -125,18 +125,18 @@ public class StunCob extends Module {
         int cobwebSlot = getCobwebSlot();
         if (cobwebSlot == -1) return;
         
-        int originalSlot = mc.player.getInventory().selectedSlot;
-        mc.player.getInventory().selectedSlot = cobwebSlot;
+        int originalSlot = mc.player.getInventory().getSelectedSlot();
+        mc.player.getInventory().setSelectedSlot(cobwebSlot);
         
-        mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, 
+        mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, 
             new BlockHitResult(pos, Direction.UP, blockPos, false));
         
-        mc.player.getInventory().selectedSlot = originalSlot;
+        mc.player.getInventory().setSelectedSlot(originalSlot);
     }
     
     private int getCobwebSlot() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (stack.getItem() == Items.COBWEB) {
                 return i;
             }
@@ -149,12 +149,12 @@ public class StunCob extends Module {
     }
     
     private boolean isValidTarget(Entity entity) {
-        if (entity == null || entity == mc.player || entity == mc.cameraEntity) return false;
+        if (entity == null || entity == mc.player || entity == mc.getCameraEntity()) return false;
         if (!(entity instanceof LivingEntity livingEntity)) return false;
-        if (!livingEntity.isAlive() || livingEntity.isDead()) return false;
-        if (FriendManager.isFriend(entity.getUuid())) return false;
+        if (!livingEntity.isAlive() || livingEntity.isRemoved()) return false;
+        if (FriendManager.isFriend(entity.getUUID())) return false;
         
-        if (entity instanceof PlayerEntity) {
+        if (entity instanceof Player) {
             return targetPlayers.getValue();
         } else {
             return targetMobs.getValue();

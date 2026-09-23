@@ -4,18 +4,18 @@ import cc.silk.event.impl.player.TickEvent;
 import cc.silk.mixin.MinecraftClientAccessor;
 import cc.silk.module.Category;
 import cc.silk.module.Module;
+import cc.silk.utils.mc.InventoryUtil;
 import cc.silk.module.setting.KeybindSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.keybinding.KeyUtils;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.RespawnAnchorBlock;
-import net.minecraft.item.Items;
-import net.minecraft.item.SwordItem;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RespawnAnchorBlock;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
 
 public final class KeyAnchor extends Module {
@@ -41,7 +41,7 @@ public final class KeyAnchor extends Module {
     @EventHandler
     private void onTickEvent(TickEvent event) {
         if (isNull() || !isEnabled()) return;
-        if (mc.currentScreen != null) return;
+        if (mc.screen != null) return;
 
         boolean currentKeyState = KeyUtils.isKeyPressed(anchorKeybind.getKeyCode());
 
@@ -74,7 +74,7 @@ public final class KeyAnchor extends Module {
         if (isActive) return;
 
         isActive = true;
-        originalSlot = mc.player.getInventory().selectedSlot;
+        originalSlot = mc.player.getInventory().getSelectedSlot();
         hasPlacedThisCycle = false;
         timer.reset();
     }
@@ -83,7 +83,7 @@ public final class KeyAnchor extends Module {
         if (!isActive) return;
 
         if (originalSlot != -1) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
         }
         isActive = false;
         originalSlot = -1;
@@ -92,15 +92,15 @@ public final class KeyAnchor extends Module {
     }
 
     private void processAnchorPvP() {
-        if (!(mc.crosshairTarget instanceof BlockHitResult blockHit)) return;
+        if (!(mc.hitResult instanceof BlockHitResult blockHit)) return;
 
         BlockPos targetBlock = blockHit.getBlockPos();
-        var blockState = mc.world.getBlockState(targetBlock);
+        var blockState = mc.level.getBlockState(targetBlock);
 
         if (blockState.isAir()) return;
 
         if (blockState.getBlock() == Blocks.RESPAWN_ANCHOR) {
-            int charges = blockState.get(RespawnAnchorBlock.CHARGES);
+            int charges = blockState.getValue(RespawnAnchorBlock.CHARGE);
             if (charges > 0) {
                 if (swapToItem(Items.TOTEM_OF_UNDYING) || swapToSword()) {
                     ((MinecraftClientAccessor) mc).invokeDoItemUse();
@@ -116,7 +116,7 @@ public final class KeyAnchor extends Module {
             return;
         }
 
-        BlockPos placementPos = targetBlock.offset(blockHit.getSide());
+        BlockPos placementPos = targetBlock.relative(blockHit.getDirection());
         if (isValidAnchorPosition(placementPos) && !hasPlacedThisCycle) {
             if (swapToItem(Items.RESPAWN_ANCHOR)) {
                 hasPlacedThisCycle = true;
@@ -128,19 +128,19 @@ public final class KeyAnchor extends Module {
 
 
     private boolean isValidAnchorPosition(BlockPos pos) {
-        if (mc.world == null || mc.player == null) return false;
-        if (mc.player.getPos().distanceTo(Vec3d.ofCenter(pos)) > 4.5) return false;
-        if (!mc.world.getBlockState(pos).isAir()) return false;
+        if (mc.level == null || mc.player == null) return false;
+        if (mc.player.position().distanceTo(Vec3.atCenterOf(pos)) > 4.5) return false;
+        if (!mc.level.getBlockState(pos).isAir()) return false;
 
-        BlockPos playerPos = mc.player.getBlockPos();
-        return !pos.equals(playerPos) && !pos.equals(playerPos.up());
+        BlockPos playerPos = mc.player.blockPosition();
+        return !pos.equals(playerPos) && !pos.equals(playerPos.above());
     }
 
-    private boolean swapToItem(net.minecraft.item.Item item) {
+    private boolean swapToItem(net.minecraft.world.item.Item item) {
         for (int i = 0; i < 9; i++) {
-            var stack = mc.player.getInventory().getStack(i);
+            var stack = mc.player.getInventory().getItem(i);
             if (!stack.isEmpty() && stack.getItem() == item) {
-                mc.player.getInventory().selectedSlot = i;
+                mc.player.getInventory().setSelectedSlot(i);
                 return true;
             }
         }
@@ -149,9 +149,9 @@ public final class KeyAnchor extends Module {
 
     private boolean swapToSword() {
         for (int i = 0; i < 9; i++) {
-            var stack = mc.player.getInventory().getStack(i);
-            if (!stack.isEmpty() && stack.getItem() instanceof SwordItem) {
-                mc.player.getInventory().selectedSlot = i;
+            var stack = mc.player.getInventory().getItem(i);
+            if (!stack.isEmpty() && InventoryUtil.isSword(stack)) {
+                mc.player.getInventory().setSelectedSlot(i);
                 return true;
             }
         }
@@ -160,7 +160,7 @@ public final class KeyAnchor extends Module {
 
     private void restoreOriginalSlot() {
         if (originalSlot != -1) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
         }
     }
 

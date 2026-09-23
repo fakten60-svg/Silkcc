@@ -10,7 +10,7 @@ import cc.silk.utils.math.MathUtils;
 import cc.silk.utils.math.TimerUtil;
 import cc.silk.utils.mc.InventoryUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.Items;
+import net.minecraft.world.item.Items;
 
 public final class AutoExtinguish extends Module {
     public static final RangeSetting delayMS = new RangeSetting("Delay (MS)", 0, 1200, 250, 330, 0.5);
@@ -49,8 +49,8 @@ public final class AutoExtinguish extends Module {
 
     private void startExtinguishing() {
         isExtinguishing = true;
-        originalPitch = mc.player.getPitch();
-        originalSlot = mc.player.getInventory().selectedSlot;
+        originalPitch = mc.player.getXRot();
+        originalSlot = mc.player.getInventory().getSelectedSlot();
 
         long min = (long) delayMS.getMinValue();
         long max = (long) delayMS.getMaxValue();
@@ -72,7 +72,7 @@ public final class AutoExtinguish extends Module {
                     break;
 
                 case AIMING:
-                    mc.player.setPitch(89.9f);
+                    mc.player.setXRot(89.9f);
                     currentState = State.PLACING;
                     timer.reset();
                     break;
@@ -94,10 +94,10 @@ public final class AutoExtinguish extends Module {
 
                 case RETURNING:
                     if (toPrevSlot.getValue()) {
-                        mc.player.getInventory().selectedSlot = originalSlot;
+                        mc.player.getInventory().setSelectedSlot(originalSlot);
                     }
                     if (rotateBack.getValue()) {
-                        mc.player.setPitch(originalPitch);
+                        mc.player.setXRot(originalPitch);
                     }
                     isExtinguishing = false;
                     currentState = State.READY;
@@ -110,10 +110,10 @@ public final class AutoExtinguish extends Module {
     private void finishExtinguishing() {
         isExtinguishing = false;
         if (toPrevSlot.getValue()) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
         }
         if (rotateBack.getValue()) {
-            mc.player.setPitch(originalPitch);
+            mc.player.setXRot(originalPitch);
         }
         currentState = State.READY;
     }

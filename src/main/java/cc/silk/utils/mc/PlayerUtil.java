@@ -3,9 +3,9 @@ package cc.silk.utils.mc;
 import cc.silk.utils.IMinecraft;
 import lombok.Getter;
 import lombok.experimental.UtilityClass;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 
 @UtilityClass
 @Getter
@@ -15,7 +15,7 @@ public final class PlayerUtil implements IMinecraft {
 
     public int getOffGroundTicks() {
         assert mc.player != null;
-        if (mc.player.isOnGround()) {
+        if (mc.player.onGround()) {
             groundTicks++;
             offGroundTicks = 0;
         } else {
@@ -26,17 +26,17 @@ public final class PlayerUtil implements IMinecraft {
     }
 
     public static boolean isLookingAt(BlockPos pos, double maxDistance) {
-        if (mc.player == null || mc.world == null) return false;
+        if (mc.player == null || mc.level == null) return false;
 
-        Vec3d eyePos = mc.player.getCameraPosVec(1.0f);
-        Vec3d lookVec = mc.player.getRotationVec(1.0f);
-        Vec3d reachVec = eyePos.add(lookVec.multiply(maxDistance));
+        Vec3 eyePos = mc.player.getEyePosition(1.0f);
+        Vec3 lookVec = mc.player.getViewVector(1.0f);
+        Vec3 reachVec = eyePos.add(lookVec.scale(maxDistance));
 
-        BlockHitResult result = mc.world.raycast(new net.minecraft.world.RaycastContext(
+        BlockHitResult result = mc.level.clip(new net.minecraft.world.level.ClipContext(
                 eyePos,
                 reachVec,
-                net.minecraft.world.RaycastContext.ShapeType.OUTLINE,
-                net.minecraft.world.RaycastContext.FluidHandling.NONE,
+                net.minecraft.world.level.ClipContext.Block.OUTLINE,
+                net.minecraft.world.level.ClipContext.Fluid.NONE,
                 mc.player
         ));
 

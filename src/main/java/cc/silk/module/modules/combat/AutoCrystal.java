@@ -11,13 +11,12 @@ import cc.silk.utils.keybinding.KeyUtils;
 import cc.silk.utils.math.TimerUtil;
 import cc.silk.utils.mc.InventoryUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.decoration.EndCrystalEntity;
-import net.minecraft.item.Items;
-import net.minecraft.item.SwordItem;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -50,7 +49,7 @@ public final class AutoCrystal extends Module {
     @EventHandler
     private void onTickEvent(TickEvent event) {
         if (isNull()) return;
-        if (mc.currentScreen != null) return;
+        if (mc.screen != null) return;
 
         if (!KeyUtils.isKeyPressed(crystalKey.getKeyCode())) return;
 
@@ -61,14 +60,14 @@ public final class AutoCrystal extends Module {
     }
 
     private void processCrystal() {
-        if (antiSuicide.getValue() && !mc.player.isOnGround()) return;
-        if (mc.crosshairTarget instanceof EntityHitResult entityHit) {
-            if (entityHit.getEntity() instanceof EndCrystalEntity crystal) {
-                if (!crystal.isRemoved() && crystal.isAlive() && mc.world.getEntityById(crystal.getId()) != null) {
+        if (antiSuicide.getValue() && !mc.player.onGround()) return;
+        if (mc.hitResult instanceof EntityHitResult entityHit) {
+            if (entityHit.getEntity() instanceof EndCrystal crystal) {
+                if (!crystal.isRemoved() && crystal.isAlive() && mc.level.getEntity(crystal.getId()) != null) {
 
-                    if (mc.player.getPos().distanceTo(crystal.getPos()) <= 4.5) {
-                        if (antiWeakness.getValue() && mc.player.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.WEAKNESS)) {
-                            InventoryUtil.swapToWeapon(SwordItem.class);
+                    if (mc.player.position().distanceTo(crystal.position()) <= 4.5) {
+                        if (antiWeakness.getValue() && mc.player.hasEffect(net.minecraft.world.effect.MobEffects.WEAKNESS)) {
+                            InventoryUtil.swapToSword();
                         }
                         ((MinecraftClientAccessor) mc).invokeDoAttack();
                     }
@@ -77,16 +76,16 @@ public final class AutoCrystal extends Module {
             }
         }
 
-        if (mc.crosshairTarget instanceof BlockHitResult blockHit) {
+        if (mc.hitResult instanceof BlockHitResult blockHit) {
             BlockPos targetBlock = blockHit.getBlockPos();
-            BlockPos placementPos = targetBlock.offset(blockHit.getSide());
+            BlockPos placementPos = targetBlock.relative(blockHit.getDirection());
 
             if (isObsidianOrBedrock(targetBlock) && isValidCrystalPosition(placementPos)) {
                 if (autoSwitch.getValue() && hasItemInHotbar()) {
                     InventoryUtil.swapToSlot(Items.END_CRYSTAL);
                 }
 
-                if (mc.player.getMainHandStack().getItem() == Items.END_CRYSTAL) {
+                if (mc.player.getMainHandItem().getItem() == Items.END_CRYSTAL) {
                     ((MinecraftClientAccessor) mc).invokeDoItemUse();
                 }
             }
@@ -95,33 +94,33 @@ public final class AutoCrystal extends Module {
 
     private boolean hasItemInHotbar() {
         for (int i = 0; i < 9; i++) {
-            var stack = mc.player.getInventory().getStack(i);
+            var stack = mc.player.getInventory().getItem(i);
             if (!stack.isEmpty() && stack.getItem() == Items.END_CRYSTAL) return true;
         }
         return false;
     }
 
     private boolean isObsidianOrBedrock(BlockPos pos) {
-        if (mc.world == null) return false;
-        var block = mc.world.getBlockState(pos).getBlock();
-        return block == net.minecraft.block.Blocks.OBSIDIAN || block == net.minecraft.block.Blocks.BEDROCK;
+        if (mc.level == null) return false;
+        var block = mc.level.getBlockState(pos).getBlock();
+        return block == net.minecraft.world.level.block.Blocks.OBSIDIAN || block == net.minecraft.world.level.block.Blocks.BEDROCK;
     }
 
     private boolean isValidCrystalPosition(BlockPos pos) {
-        if (mc.world == null) return false;
-        if (mc.player.getPos().distanceTo(Vec3d.ofCenter(pos)) > 4.5) return false;
+        if (mc.level == null) return false;
+        if (mc.player.position().distanceTo(Vec3.atCenterOf(pos)) > 4.5) return false;
 
-        if (!mc.world.getBlockState(pos).isAir()) return false;
-        if (!mc.world.getBlockState(pos.up()).isAir()) return false;
+        if (!mc.level.getBlockState(pos).isAir()) return false;
+        if (!mc.level.getBlockState(pos.above()).isAir()) return false;
 
-        BlockPos playerPos = mc.player.getBlockPos();
-        return !pos.equals(playerPos) && !pos.equals(playerPos.up());
+        BlockPos playerPos = mc.player.blockPosition();
+        return !pos.equals(playerPos) && !pos.equals(playerPos.above());
     }
 
     @Override
     public void onEnable() {
         super.onEnable();
-        if (autoSwitch.getValue()) originalSlot = mc.player.getInventory().selectedSlot;
+        if (autoSwitch.getValue()) originalSlot = mc.player.getInventory().getSelectedSlot();
         timer.reset();
     }
 
@@ -129,7 +128,7 @@ public final class AutoCrystal extends Module {
     public void onDisable() {
         super.onDisable();
         if (switchBack.getValue() && originalSlot != -1) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
         }
         originalSlot = -1;
     }

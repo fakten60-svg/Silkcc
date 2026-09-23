@@ -2,13 +2,16 @@
   "schemaVersion": 1,
   "id": "silk",
   "version": "${version}",
-  "name": "motionblurr",
-  "description": "Motion Blur for fabric",
+  "name": "Silk",
+  "description": "Silk - free Minecraft PvP client for Fabric",
+  "authors": [
+    "koi"
+  ],
   "contact": {
-    "sources": "https://github.com/Noryea/motionblur-fabric",
-    "issues": "https://github.com/Noryea/motionblur-fabric/issues"
+    "sources": "https://github.com/tomlovesida/Silkcc",
+    "issues": "https://github.com/tomlovesida/Silkcc/issues"
   },
-  "license": "CC0-1.0",
+  "license": "MIT",
   "icon": "assets/silk/icon.png",
   "environment": "client",
   "entrypoints": {
@@ -20,11 +23,9 @@
     "silk.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.17.3",
-    "minecraft": "1.21.4",
-    "java": ">=21",
-    "fabric-api-base": ">=0.4.35",
-    "fabric-resource-loader-v0": ">=0.11.14",
-    "fabric-networking-api-v1": ">=3.1.1"
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.1.2",
+    "java": ">=25",
+    "fabric-api": "*"
   }
 }

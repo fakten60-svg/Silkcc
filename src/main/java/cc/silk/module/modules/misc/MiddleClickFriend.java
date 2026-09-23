@@ -5,9 +5,9 @@ import cc.silk.module.Category;
 import cc.silk.module.Module;
 import cc.silk.utils.friend.FriendManager;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import org.lwjgl.glfw.GLFW;
 
 public final class MiddleClickFriend extends Module {
@@ -21,18 +21,18 @@ public final class MiddleClickFriend extends Module {
         if (event.button() == GLFW.GLFW_MOUSE_BUTTON_MIDDLE && event.action() == GLFW.GLFW_PRESS) {
             if (isNull()) return;
 
-            HitResult hitResult = mc.crosshairTarget;
+            HitResult hitResult = mc.hitResult;
             if (hitResult != null && hitResult.getType() == HitResult.Type.ENTITY) {
                 EntityHitResult entityHitResult = (EntityHitResult) hitResult;
-                if (entityHitResult.getEntity() instanceof PlayerEntity player) {
+                if (entityHitResult.getEntity() instanceof Player player) {
                     if (player == mc.player) return;
 
-                    FriendManager.toggleFriend(player.getUuid());
+                    FriendManager.toggleFriend(player.getUUID());
 
-                    if (FriendManager.isFriend(player.getUuid())) {
-                        mc.player.sendMessage(net.minecraft.text.Text.literal("§a" + player.getName().getString() + " added to friends"), false);
+                    if (FriendManager.isFriend(player.getUUID())) {
+                        mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§a" + player.getName().getString() + " added to friends"));
                     } else {
-                        mc.player.sendMessage(net.minecraft.text.Text.literal("§c" + player.getName().getString() + " removed from friends"), false);
+                        mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§c" + player.getName().getString() + " removed from friends"));
                     }
                 }
             }

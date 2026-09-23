@@ -9,10 +9,10 @@ import cc.silk.module.setting.BooleanSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.FireworkRocketItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.FireworkRocketItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public final class AutoFirework extends Module {
     private final BooleanSetting onlyWhenFlying = new BooleanSetting("Only When Flying", true);
@@ -45,10 +45,10 @@ public final class AutoFirework extends Module {
     private void onTickEvent(TickEvent event) {
         if (isNull())
             return;
-        if (mc.currentScreen != null)
+        if (mc.screen != null)
             return;
 
-        boolean currentRightClick = mc.options.useKey.isPressed();
+        boolean currentRightClick = mc.options.keyUse.isDown();
 
         if (!wasRightClickPressed && currentRightClick && shouldUseFirework() && canUseFirework()) {
             lastFireworkTime = System.currentTimeMillis();
@@ -90,19 +90,19 @@ public final class AutoFirework extends Module {
     }
 
     private boolean isWearingElytra() {
-        ItemStack chestplate = mc.player.getEquippedStack(EquipmentSlot.CHEST);
-        if (!chestplate.isOf(Items.ELYTRA))
+        ItemStack chestplate = mc.player.getItemBySlot(EquipmentSlot.CHEST);
+        if (!chestplate.is(Items.ELYTRA))
             return false;
-        return chestplate.getMaxDamage() == 0 || chestplate.getDamage() < chestplate.getMaxDamage() - 1;
+        return chestplate.getMaxDamage() == 0 || chestplate.getDamageValue() < chestplate.getMaxDamage() - 1;
     }
 
     private boolean isHoldingImportantItem() {
         if (respectGapples.getValue()
-                && (isGoldenApple(mc.player.getMainHandStack()) || isGoldenApple(mc.player.getOffHandStack()))) {
+                && (isGoldenApple(mc.player.getMainHandItem()) || isGoldenApple(mc.player.getOffhandItem()))) {
             return true;
         }
         return respectArmor.getValue()
-                && (isArmor(mc.player.getMainHandStack()) || isArmor(mc.player.getOffHandStack()));
+                && (isArmor(mc.player.getMainHandItem()) || isArmor(mc.player.getOffhandItem()));
     }
 
     private boolean isGoldenApple(ItemStack stack) {
@@ -117,7 +117,7 @@ public final class AutoFirework extends Module {
 
     private int findFireworkInHotbar() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (stack.getItem() instanceof FireworkRocketItem) {
                 return i;
             }
@@ -130,8 +130,8 @@ public final class AutoFirework extends Module {
         if (fireworkSlot == -1)
             return;
 
-        originalSlot = mc.player.getInventory().selectedSlot;
-        mc.player.getInventory().selectedSlot = fireworkSlot;
+        originalSlot = mc.player.getInventory().getSelectedSlot();
+        mc.player.getInventory().setSelectedSlot(fireworkSlot);
 
         ((MinecraftClientAccessor) mc).invokeDoItemUse();
 
@@ -140,14 +140,14 @@ public final class AutoFirework extends Module {
                 pendingSwitchBack = true;
                 switchBackTimer.reset();
             } else {
-                mc.player.getInventory().selectedSlot = originalSlot;
+                mc.player.getInventory().setSelectedSlot(originalSlot);
             }
         }
     }
 
     private void performSwitchBack() {
         if (originalSlot != -1) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
         }
         pendingSwitchBack = false;
         originalSlot = -1;

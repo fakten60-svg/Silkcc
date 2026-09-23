@@ -10,14 +10,14 @@ import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.friend.FriendManager;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.Tameable;
-import net.minecraft.entity.passive.PassiveEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.AxeItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public final class AutoMace extends Module {
 
@@ -53,8 +53,8 @@ public final class AutoMace extends Module {
     }
 
     private void updateFall() {
-        boolean onGround = mc.player.isOnGround();
-        boolean falling = mc.player.getVelocity().y < -0.1;
+        boolean onGround = mc.player.onGround();
+        boolean falling = mc.player.getDeltaMovement().y < -0.1;
         double currentY = mc.player.getY();
 
         if (onGround) {
@@ -80,15 +80,15 @@ public final class AutoMace extends Module {
     }
 
     private void attack() {
-        if (!isFalling || mc.player.getVelocity().y >= -0.1)
+        if (!isFalling || mc.player.getDeltaMovement().y >= -0.1)
             return;
 
         double fallDist = fallStartY == -1 ? 0 : Math.max(0, fallStartY - mc.player.getY());
         if (fallDist < minFallDistance.getValueFloat())
             return;
 
-        Entity target = mc.targetedEntity;
-        if (!isValidTarget(target) || FriendManager.isFriend(target.getUuid()))
+        Entity target = mc.crosshairPickEntity;
+        if (!isValidTarget(target) || FriendManager.isFriend(target.getUUID()))
             return;
 
         if (stunSlam.getValue()) {
@@ -101,20 +101,20 @@ public final class AutoMace extends Module {
     }
 
     private void handleSlam(Entity target, double fallDist) {
-        boolean targetBlocking = target instanceof PlayerEntity player &&
+        boolean targetBlocking = target instanceof Player player &&
                 player.isHolding(Items.SHIELD) &&
                 player.isBlocking();
 
         if (targetBlocking && fallDist > minFallDistance.getValueFloat() && !slamExecuted && slamTick == 0) {
             if (savedSlot == -1)
-                savedSlot = mc.player.getInventory().selectedSlot;
+                savedSlot = mc.player.getInventory().getSelectedSlot();
             slamTick = 1;
         }
 
         if (slamTick == 1) {
             int axeSlot = getAxeSlotId();
             if (axeSlot != -1) {
-                mc.player.getInventory().selectedSlot = axeSlot;
+                mc.player.getInventory().setSelectedSlot(axeSlot);
                 ((MinecraftClientAccessor) mc).invokeDoAttack();
             }
             slamTick = 2;
@@ -130,7 +130,7 @@ public final class AutoMace extends Module {
 
         if (!hasMace()) {
             if (savedSlot == -1)
-                savedSlot = mc.player.getInventory().selectedSlot;
+                savedSlot = mc.player.getInventory().getSelectedSlot();
             if (autoSwitch.getValue()) {
                 switchToAppropriateMace(fallDist);
             } else {
@@ -147,27 +147,27 @@ public final class AutoMace extends Module {
     }
 
     private boolean isValidTarget(Entity entity) {
-        if (entity == null || entity == mc.player || entity == mc.cameraEntity)
+        if (entity == null || entity == mc.player || entity == mc.getCameraEntity())
             return false;
         if (!(entity instanceof LivingEntity livingEntity))
             return false;
-        if (!livingEntity.isAlive() || livingEntity.isDead())
+        if (!livingEntity.isAlive() || livingEntity.isRemoved())
             return false;
         if (Teams.isTeammate(entity))
             return false;
 
-        if (entity instanceof PlayerEntity) {
+        if (entity instanceof Player) {
             return targetPlayers.getValue();
         } else {
             if (!targetMobs.getValue())
                 return false;
-            return !(entity instanceof PassiveEntity) && !(entity instanceof Tameable);
+            return !(entity instanceof Animal) && !(entity instanceof TamableAnimal);
         }
     }
 
     private int getAxeSlotId() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (isAxe(stack))
                 return i;
         }
@@ -179,14 +179,14 @@ public final class AutoMace extends Module {
     }
 
     private boolean hasMace() {
-        return mc.player.getMainHandStack().getItem() == Items.MACE;
+        return mc.player.getMainHandItem().getItem() == Items.MACE;
     }
 
     private void switchToMace() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (stack.getItem() == Items.MACE) {
-                mc.player.getInventory().selectedSlot = i;
+                mc.player.getInventory().setSelectedSlot(i);
                 return;
             }
         }
@@ -202,13 +202,13 @@ public final class AutoMace extends Module {
         }
 
         if (targetSlot != -1) {
-            mc.player.getInventory().selectedSlot = targetSlot;
+            mc.player.getInventory().setSelectedSlot(targetSlot);
         }
     }
 
     private int findDensityMaceSlot() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (stack.getItem() == Items.MACE && hasDensityEnchantment(stack)) {
                 return i;
             }
@@ -218,7 +218,7 @@ public final class AutoMace extends Module {
 
     private int findBreachMaceSlot() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (stack.getItem() == Items.MACE && hasBreachEnchantment(stack)) {
                 return i;
             }
@@ -228,7 +228,7 @@ public final class AutoMace extends Module {
 
     private int findAnyMaceSlot() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (stack.getItem() == Items.MACE) {
                 return i;
             }
@@ -237,18 +237,18 @@ public final class AutoMace extends Module {
     }
 
     private boolean hasDensityEnchantment(ItemStack stack) {
-        return stack.getEnchantments().getEnchantments().stream()
-                .anyMatch(enchantment -> enchantment.getIdAsString().contains("density"));
+        return stack.getEnchantments().keySet().stream()
+                .anyMatch(enchantment -> enchantment.getRegisteredName().contains("density"));
     }
 
     private boolean hasBreachEnchantment(ItemStack stack) {
-        return stack.getEnchantments().getEnchantments().stream()
-                .anyMatch(enchantment -> enchantment.getIdAsString().contains("breach"));
+        return stack.getEnchantments().keySet().stream()
+                .anyMatch(enchantment -> enchantment.getRegisteredName().contains("breach"));
     }
 
     private void switchToSlot(int slot) {
         if (slot >= 0 && slot < 9) {
-            mc.player.getInventory().selectedSlot = slot;
+            mc.player.getInventory().setSelectedSlot(slot);
         }
     }
 

@@ -3,10 +3,10 @@ package cc.silk.mixin;
 import cc.silk.SilkClient;
 import cc.silk.module.modules.movement.KeepSprint;
 import cc.silk.module.modules.player.FastMine;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Optional;
 
-@Mixin(PlayerEntity.class)
+@Mixin(Player.class)
 public class PlayerEntityMixin {
 
     @Inject(method = "getBlockBreakingSpeed", at = @At("RETURN"), cancellable = true)
@@ -28,8 +28,8 @@ public class PlayerEntityMixin {
         FastMine fastMine = optionalModule.get();
         if (!fastMine.isEnabled()) return;
 
-        PlayerEntity player = (PlayerEntity) (Object) this;
-        if (player != MinecraftClient.getInstance().player) return;
+        Player player = (Player) (Object) this;
+        if (player != Minecraft.getInstance().player) return;
 
         float modifiedSpeed = cir.getReturnValue() * fastMine.getSpeed();
         cir.setReturnValue(modifiedSpeed);

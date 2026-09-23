@@ -15,7 +15,7 @@ public class NewClickGUIModule extends Module {
 
     @Override
     public void onEnable() {
-        if (mc.currentScreen == null) {
+        if (mc.screen == null) {
             mc.setScreen(new NewClickGUI());
         }
         setEnabled(false);

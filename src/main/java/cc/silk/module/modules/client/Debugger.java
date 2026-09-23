@@ -5,7 +5,7 @@ import cc.silk.module.Category;
 import cc.silk.module.Module;
 import cc.silk.utils.mc.ChatUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.network.packet.c2s.play.ClickSlotC2SPacket;
+import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
 
 public class Debugger extends Module {
     public Debugger() {
@@ -16,12 +16,12 @@ public class Debugger extends Module {
     public void onPacketSend(PacketEvent e) {
         if (isNull()) return;
         if (e.getPacket() == null) return;
-        if (!(e.getPacket() instanceof ClickSlotC2SPacket packet))
+        if (!(e.getPacket() instanceof ServerboundContainerClickPacket packet))
             return;
 
         ChatUtil.addChatMessage("""
                 ClickSlotPacket
-                  syncId: %s
+                  containerId: %s
                   revision: %s
                   slot: %s
                   button: %s
@@ -29,13 +29,13 @@ public class Debugger extends Module {
                   modifiedItems: %s
                   stack: %s
                 """.formatted(
-                packet.getSyncId(),
-                packet.getRevision(),
-                packet.getSlot(),
-                packet.getButton(),
-                packet.getActionType(),
-                packet.getModifiedStacks(),
-                packet.getStack()
+                packet.containerId(),
+                packet.stateId(),
+                packet.slotNum(),
+                packet.buttonNum(),
+                packet.containerInput().toString(),
+                packet.changedSlots(),
+                packet.carriedItem()
         ));
     }
 }

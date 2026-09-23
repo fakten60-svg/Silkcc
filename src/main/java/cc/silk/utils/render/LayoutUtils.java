@@ -1,7 +1,7 @@
 package cc.silk.utils.render;
 
 import lombok.experimental.UtilityClass;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -10,16 +10,16 @@ import java.util.List;
 @UtilityClass
 public final class LayoutUtils {
 
-    public static void drawLayoutBounds(DrawContext context, FlexContainer container) {
+    public static void drawLayoutBounds(GuiGraphicsExtractor context, FlexContainer container) {
         for (FlexItem item : container.items) {
-            GuiUtils.drawBorder(context, item.getX(), item.getY(), item.getWidth(), item.getHeight(),
+            GuiUtils.outline(context, item.getX(), item.getY(), item.getWidth(), item.getHeight(),
                     0, 1, new Color(255, 0, 0, 100));
         }
     }
 
-    public static void drawLayoutBounds(DrawContext context, GridContainer container) {
+    public static void drawLayoutBounds(GuiGraphicsExtractor context, GridContainer container) {
         for (GridItem item : container.items) {
-            GuiUtils.drawBorder(context, item.getX(), item.getY(), item.getWidth(), item.getHeight(),
+            GuiUtils.outline(context, item.getX(), item.getY(), item.getWidth(), item.getHeight(),
                     0, 1, new Color(0, 255, 0, 100));
         }
     }

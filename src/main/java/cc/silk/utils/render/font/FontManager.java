@@ -1,19 +1,20 @@
 package cc.silk.utils.render.font;
 
 
-import cc.silk.SilkClient;
 import cc.silk.utils.render.font.fonts.FontRenderer;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
+/**
+ * Caches {@link FontRenderer} instances per size and font family.
+ * <p>
+ * Minecraft 26.1.2's GUI rewrite removed the immediate-mode glyph atlas, so text is drawn with the
+ * vanilla font and only the requested pixel size is kept. The bundled {@code .ttf} resources are no
+ * longer rasterised.
+ */
 public class FontManager {
 
     private final Map<FontKey, FontRenderer> fontCache = new HashMap<>();
@@ -26,15 +27,8 @@ public class FontManager {
         }
     }
 
-    @SneakyThrows
     public FontRenderer create(float size, String name) {
-        String path = "silk/fonts/" + name + ".ttf";
-
-        try (InputStream inputStream = SilkClient.class.getClassLoader().getResourceAsStream(path)) {
-            Font[] font = Font.createFonts(Objects.requireNonNull(inputStream));
-
-            return new FontRenderer(font, size, 256, 2);
-        }
+        return new FontRenderer(size);
     }
 
     public FontRenderer getSize(int size, Type type) {

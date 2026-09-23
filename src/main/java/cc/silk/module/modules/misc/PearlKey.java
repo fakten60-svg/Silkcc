@@ -9,8 +9,8 @@ import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.keybinding.KeyUtils;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.Items;
-import net.minecraft.util.Hand;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.InteractionHand;
 import org.lwjgl.glfw.GLFW;
 
 public final class PearlKey extends Module {
@@ -31,7 +31,7 @@ public final class PearlKey extends Module {
 
     @EventHandler
     private void onTickEvent(TickEvent event) {
-        if (isNull() || mc.currentScreen != null) return;
+        if (isNull() || mc.screen != null) return;
 
         boolean currentKeyState = KeyUtils.isKeyPressed(pearlKeybind.getKeyCode());
 
@@ -41,7 +41,7 @@ public final class PearlKey extends Module {
         }
 
         if (needsSwitchBack && switchTimer.hasElapsedTime(switchDelay.getValueInt())) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
             needsSwitchBack = false;
             originalSlot = -1;
         }
@@ -53,14 +53,14 @@ public final class PearlKey extends Module {
         int pearlSlot = findPearlSlot();
         if (pearlSlot == -1) return;
 
-        if (mc.player.getItemCooldownManager().isCoolingDown(new net.minecraft.item.ItemStack(Items.ENDER_PEARL))) {
+        if (mc.player.getCooldowns().isOnCooldown(new net.minecraft.world.item.ItemStack(Items.ENDER_PEARL))) {
             return;
         }
 
-        originalSlot = mc.player.getInventory().selectedSlot;
-        mc.player.getInventory().selectedSlot = pearlSlot;
+        originalSlot = mc.player.getInventory().getSelectedSlot();
+        mc.player.getInventory().setSelectedSlot(pearlSlot);
 
-        if (mc.interactionManager != null) {
+        if (mc.gameMode != null) {
             ((MinecraftClientAccessor)mc).invokeDoItemUse();
         }
 
@@ -70,7 +70,7 @@ public final class PearlKey extends Module {
 
     private int findPearlSlot() {
         for (int i = 0; i < 9; i++) {
-            if (mc.player.getInventory().getStack(i).getItem() == Items.ENDER_PEARL) {
+            if (mc.player.getInventory().getItem(i).getItem() == Items.ENDER_PEARL) {
                 return i;
             }
         }

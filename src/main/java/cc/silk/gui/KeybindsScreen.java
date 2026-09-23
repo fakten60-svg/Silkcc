@@ -3,9 +3,12 @@ package cc.silk.gui;
 import cc.silk.SilkClient;
 import cc.silk.module.Module;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 import java.awt.*;
@@ -34,7 +37,7 @@ public class KeybindsScreen extends Screen {
     private boolean keyboardInitialized = false;
     
     public KeybindsScreen() {
-        super(Text.literal("Keybinds"));
+        super(Component.literal("Keybinds"));
         updateFilteredModules();
     }
     
@@ -136,7 +139,7 @@ public class KeybindsScreen extends Screen {
     }
     
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         if (!keyboardInitialized) {
             initializeKeyboard();
             keyboardInitialized = true;
@@ -355,7 +358,10 @@ public class KeybindsScreen extends Screen {
     }
     
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button != 0) return false;
         
         if (moduleSearchActive) {
@@ -373,7 +379,7 @@ public class KeybindsScreen extends Screen {
             return true;
         }
         
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
     
     private boolean handlePopupClick(double mouseX, double mouseY) {
@@ -439,7 +445,10 @@ public class KeybindsScreen extends Screen {
     }
     
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
+        int modifiers = event.modifiers();
         if (moduleSearchActive) {
             return handlePopupKeyPress(keyCode);
         }
@@ -449,7 +458,7 @@ public class KeybindsScreen extends Screen {
                 selectedModule = null;
                 return true;
             }
-            close();
+            minecraft.setScreen(null);
             return true;
         }
         
@@ -458,7 +467,7 @@ public class KeybindsScreen extends Screen {
             return true;
         }
         
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
     
     private boolean handlePopupKeyPress(int keyCode) {
@@ -480,13 +489,15 @@ public class KeybindsScreen extends Screen {
     
     
     @Override
-    public boolean charTyped(char chr, int modifiers) {
+    public boolean charTyped(CharacterEvent event) {
+        char chr = (char) event.codepoint();
+        int modifiers = 0;
         if (moduleSearchActive && chr >= 32 && chr < 127) {
             searchQuery += chr;
             updateFilteredModules();
             return true;
         }
-        return super.charTyped(chr, modifiers);
+        return super.charTyped(event);
     }
     
     private void assignKeyToModule(Module module, int keyCode) {
@@ -521,7 +532,7 @@ public class KeybindsScreen extends Screen {
     }
     
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
     

@@ -1,7 +1,7 @@
 package cc.silk.mixin;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.Mouse;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
@@ -9,13 +9,13 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 /**
  * @author Graph
  */
-@Mixin(MinecraftClient.class)
+@Mixin(Minecraft.class)
 public interface MinecraftClientAccessor {
     @Accessor("itemUseCooldown")
     void setItemUseCooldown(int cooldown);
 
     @Accessor("mouse")
-    Mouse getMouse();
+    MouseHandler getMouse();
 
     @Invoker("doItemUse")
     void invokeDoItemUse();

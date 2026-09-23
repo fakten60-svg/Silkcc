@@ -1,12 +1,12 @@
 package cc.silk.mixin;
 
 import cc.silk.module.modules.render.OutlineESP;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.MovementType;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.MoverType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,8 +18,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class EntityMixin {
 
     @Shadow public abstract BlockPos getLandingPos();
-    @Shadow public abstract boolean isOnGround();
-    @Shadow public abstract World getWorld();
+    @Shadow public abstract boolean onGround();
+    @Shadow public abstract Level getWorld();
     @Shadow protected abstract void fall(double heightDifference, boolean onGround, BlockState landedState, BlockPos landedPosition);
 
     @Inject(method = "isGlowing", at = @At("HEAD"), cancellable = true)
@@ -40,11 +40,11 @@ public abstract class EntityMixin {
     }
 
     @Inject(method = "move", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;isRemoved()Z"))
-    private void onMove(MovementType type, Vec3d movement, CallbackInfo ci) {
-        if (getWorld().isClient) {
+    private void onMove(MoverType type, Vec3 movement, CallbackInfo ci) {
+        if (getWorld().isClientSide()) {
             BlockPos blockPos = getLandingPos();
             BlockState blockState = getWorld().getBlockState(blockPos);
-            fall(movement.y, isOnGround(), blockState, blockPos);
+            fall(movement.y, onGround(), blockState, blockPos);
         }
     }
 }

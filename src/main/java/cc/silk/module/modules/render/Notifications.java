@@ -7,7 +7,7 @@ import cc.silk.utils.notification.Notification;
 import cc.silk.utils.notification.NotificationManager;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.Mth;
 
 import java.awt.*;
 import java.util.Iterator;
@@ -33,7 +33,7 @@ public class Notifications extends Module {
 
     @EventHandler
     private void onRender2D(Render2DEvent event) {
-        if (mc.player == null || mc.world == null) {
+        if (mc.player == null || mc.level == null) {
             return;
         }
 
@@ -59,7 +59,7 @@ public class Notifications extends Module {
 
             float targetProgress = notification.isRemoving() ? 0f : 1f;
             notification
-                    .setAnimationProgress(MathHelper.lerp(0.15f, notification.getAnimationProgress(), targetProgress));
+                    .setAnimationProgress(Mth.lerp(0.15f, notification.getAnimationProgress(), targetProgress));
 
             if (notification.isRemoving() && notification.getAnimationProgress() < 0.05f) {
                 iterator.remove();

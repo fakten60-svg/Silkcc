@@ -8,9 +8,12 @@ import cc.silk.gui.FriendsScreen;
 import cc.silk.gui.effects.SnowEffect;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
 import cc.silk.utils.render.GuiGlowHelper;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -44,7 +47,7 @@ public class NewClickGUI extends Screen {
     private static int contactIconImage = -1;
 
     public NewClickGUI() {
-        super(Text.literal("ClickGUI"));
+        super(Component.literal("ClickGUI"));
         initPanels();
         loadContactIcon();
     }
@@ -76,8 +79,8 @@ public class NewClickGUI extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
         long currentTime = System.currentTimeMillis();
         float deltaTime = (currentTime - lastFrameTime) / 1000f;
@@ -87,8 +90,8 @@ public class NewClickGUI extends Screen {
             animationProgress -= deltaTime * 4f;
             if (animationProgress <= 0f) {
                 animationProgress = 0f;
-                if (client != null) {
-                    client.setScreen(null);
+                if (minecraft != null) {
+                    minecraft.setScreen(null);
                 }
                 return;
             }
@@ -309,7 +312,7 @@ public class NewClickGUI extends Screen {
     }
 
     @Override
-    public void close() {
+    public void onClose() {
         closing = true;
     }
 
@@ -319,11 +322,14 @@ public class NewClickGUI extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0 && mouseX >= friendsButtonX && mouseX <= friendsButtonX + FRIENDS_BUTTON_SIZE &&
                 mouseY >= friendsButtonY && mouseY <= friendsButtonY + FRIENDS_BUTTON_SIZE) {
-            if (client != null) {
-                client.setScreen(new FriendsScreen());
+            if (minecraft != null) {
+                minecraft.setScreen(new FriendsScreen());
             }
             return true;
         }
@@ -359,11 +365,13 @@ public class NewClickGUI extends Screen {
         }
 
         searchFocused = false;
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
+    public boolean charTyped(CharacterEvent event) {
+        char chr = (char) event.codepoint();
+        int modifiers = 0;
         if (configPanel != null && configPanel.charTyped(chr, modifiers)) {
             return true;
         }
@@ -397,11 +405,14 @@ public class NewClickGUI extends Screen {
             }
         }
 
-        return super.charTyped(chr, modifiers);
+        return super.charTyped(event);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
+        int modifiers = event.modifiers();
         if (configPanel != null && configPanel.keyPressed(keyCode, scanCode, modifiers)) {
             return true;
         }
@@ -423,11 +434,14 @@ public class NewClickGUI extends Screen {
                 return true;
             }
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (configPanel != null) {
             configPanel.mouseReleased(mouseX, mouseY, button);
         }
@@ -435,11 +449,14 @@ public class NewClickGUI extends Screen {
         for (CategoryPanel panel : panels) {
             panel.mouseReleased(mouseX, mouseY, button);
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (configPanel != null && configPanel.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) {
             return true;
         }
@@ -449,7 +466,7 @@ public class NewClickGUI extends Screen {
                 return true;
             }
         }
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        return super.mouseDragged(event, deltaX, deltaY);
     }
 
     @Override
@@ -466,7 +483,7 @@ public class NewClickGUI extends Screen {
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
 
-    private void renderPanelGlows(DrawContext context, float alpha, float scale, int centerX, int centerY,
+    private void renderPanelGlows(GuiGraphicsExtractor context, float alpha, float scale, int centerX, int centerY,
             CategoryPanel draggedPanel, boolean configDragging) {
         if (!cc.silk.module.modules.client.ClientSettingsModule.isGuiGlowEnabled()) {
             return;
@@ -514,14 +531,14 @@ public class NewClickGUI extends Screen {
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 
     @Override
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         if (cc.silk.module.modules.client.ClientSettingsModule.isGuiBlurEnabled()) {
-            super.renderBackground(context, mouseX, mouseY, delta);
+            super.extractBackground(context, mouseX, mouseY, delta);
         }
     }
 }

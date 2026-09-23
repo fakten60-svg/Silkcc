@@ -22,7 +22,7 @@ public class KeybindsModule extends Module {
 
     @Override
     public void onEnable() {
-        if (mc.currentScreen == null) {
+        if (mc.screen == null) {
             mc.setScreen(new cc.silk.gui.KeybindsScreen());
         }
         setEnabled(false);
