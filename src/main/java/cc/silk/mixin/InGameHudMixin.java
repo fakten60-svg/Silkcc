@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Gui.class)
 public class InGameHudMixin {
-    @Inject(method = "render", at = @At(value = "TAIL"))
+    @Inject(method = "extractRenderState", at = @At(value = "TAIL"))
     private void onRender(GuiGraphicsExtractor context, DeltaTracker tickCounter, CallbackInfo ci) {
         RenderUtils.unscaledProjection();
         RenderUtils.scaledProjection();

@@ -40,7 +40,7 @@ public class MinecraftClientMixin implements IMinecraft {
     @Final
     private DeltaTracker.Timer renderTickCounter;
 
-    @Inject(method = "getWindowTitle", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "createTitle", at = @At("HEAD"), cancellable = true)
     public void setTitle(CallbackInfoReturnable<String> cir) {
         if (SilkClient.INSTANCE == null || SilkClient.mc == null) return;
 
@@ -48,7 +48,7 @@ public class MinecraftClientMixin implements IMinecraft {
         if (optionalClientModule.isPresent()) {
             Client client = optionalClientModule.get();
             if (client.isEnabled() && client.getTitle()) {
-                cir.setReturnValue("Silk 1.21.1");
+                cir.setReturnValue("Silk 26.1.2");
             }
         }
     }
@@ -81,8 +81,8 @@ public class MinecraftClientMixin implements IMinecraft {
         }
     }
 
-    @Inject(method = "doAttack", at = @At("HEAD"), cancellable = true)
-    public final void doAttackInject(CallbackInfoReturnable<Boolean> cir) {
+    @Inject(method = "startAttack", at = @At("HEAD"), cancellable = true)
+    private void doAttackInject(CallbackInfoReturnable<Boolean> cir) {
         try {
             var antiMissOpt = SilkClient.INSTANCE.getModuleManager().getModule(cc.silk.module.modules.combat.AntiMiss.class);
             if (antiMissOpt.isPresent() && antiMissOpt.get().isEnabled()) {
@@ -106,19 +106,19 @@ public class MinecraftClientMixin implements IMinecraft {
         }
     }
 
-    @Inject(method = "setWorld", at = @At("HEAD"))
+    @Inject(method = "setLevel", at = @At("HEAD"))
     public void onWorldChangeInject(ClientLevel newWorld, CallbackInfo ci) {
         if (SilkClient.INSTANCE != null && SilkClient.mc != null) {
             SilkClient.INSTANCE.getSilkEventBus().post(new WorldChangeEvent(newWorld));
         }
     }
-    @Inject(method = "onDisconnected", at = @At("HEAD"))
-    public final void onDisconnected(CallbackInfo ci) {
+    @Inject(method = "disconnectFromWorld", at = @At("HEAD"))
+    private void onDisconnected(net.minecraft.network.chat.Component reason, CallbackInfo ci) {
         DisconnectEvent event = new DisconnectEvent();
-        SilkClient.INSTANCE.getSilkEventBus().post(event);
+        if (SilkClient.INSTANCE != null) SilkClient.INSTANCE.getSilkEventBus().post(event);
     }
-    @Inject(method = "doItemUse", at = @At("HEAD"), cancellable = true)
-    public final void doItemUseInject(CallbackInfo ci) {
+    @Inject(method = "startUseItem", at = @At("HEAD"), cancellable = true)
+    private void doItemUseInject(CallbackInfo ci) {
         ItemUseEvent event = new ItemUseEvent();
 
         SilkClient.INSTANCE.getSilkEventBus().post(event);

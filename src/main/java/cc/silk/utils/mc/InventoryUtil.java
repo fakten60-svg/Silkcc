@@ -24,7 +24,8 @@ public final class InventoryUtil implements IMinecraft {
     }
 
     public static boolean hasItem(Item item) {
-        for (byte i = 0; i < Objects.requireNonNull(mc.player).getInventory().getContainerSize(); i++) {
+        if (mc.player == null) return false;
+        for (byte i = 0; i < mc.player.getInventory().getContainerSize(); i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
             if (stack.getItem() == item) {
                 return true;
@@ -34,7 +35,8 @@ public final class InventoryUtil implements IMinecraft {
     }
 
     public static boolean hasWeapon(Class<? extends Item> weaponClass) {
-        for (byte i = 0; i < Objects.requireNonNull(mc.player).getInventory().getContainerSize(); i++) {
+        if (mc.player == null) return false;
+        for (byte i = 0; i < mc.player.getInventory().getContainerSize(); i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
             if (weaponClass.isInstance(stack.getItem())) {
                 return true;
@@ -44,7 +46,8 @@ public final class InventoryUtil implements IMinecraft {
     }
 
     public static void swapToWeapon(Class<? extends Item> weaponClass) {
-        for (byte i = 0; i < Objects.requireNonNull(mc.player).getInventory().getContainerSize(); i++) {
+        if (mc.player == null) return;
+        for (byte i = 0; i < mc.player.getInventory().getContainerSize(); i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
             if (weaponClass.isInstance(stack.getItem())) {
                 mc.player.getInventory().setSelectedSlot(i);
@@ -74,7 +77,8 @@ public final class InventoryUtil implements IMinecraft {
     }
 
     public static void swapToSword() {
-        for (byte i = 0; i < Objects.requireNonNull(mc.player).getInventory().getContainerSize(); i++) {
+        if (mc.player == null) return;
+        for (byte i = 0; i < mc.player.getInventory().getContainerSize(); i++) {
             if (isSword(mc.player.getInventory().getItem(i))) {
                 mc.player.getInventory().setSelectedSlot(i);
                 break;

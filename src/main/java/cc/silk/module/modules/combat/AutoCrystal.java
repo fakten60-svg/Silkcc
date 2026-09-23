@@ -120,7 +120,7 @@ public final class AutoCrystal extends Module {
     @Override
     public void onEnable() {
         super.onEnable();
-        if (autoSwitch.getValue()) originalSlot = mc.player.getInventory().getSelectedSlot();
+        if (autoSwitch.getValue() && mc.player != null) originalSlot = mc.player.getInventory().getSelectedSlot();
         timer.reset();
     }
 
@@ -128,7 +128,7 @@ public final class AutoCrystal extends Module {
     public void onDisable() {
         super.onDisable();
         if (switchBack.getValue() && originalSlot != -1) {
-            mc.player.getInventory().setSelectedSlot(originalSlot);
+            if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(originalSlot);
         }
         originalSlot = -1;
     }

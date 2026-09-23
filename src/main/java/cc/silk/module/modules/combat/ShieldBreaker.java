@@ -121,7 +121,7 @@ public final class ShieldBreaker extends Module {
 
             if (savedSlot != -1 && swapBackTimer.hasElapsedTime(swapBackDelay.getValueInt())) {
                 if (revertSlot.getValue())
-                    mc.player.getInventory().setSelectedSlot(savedSlot);
+                    if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(savedSlot);
                 savedSlot = -1;
             }
         }
@@ -130,7 +130,7 @@ public final class ShieldBreaker extends Module {
     @Override
     public void onDisable() {
         if (savedSlot != -1 && revertSlot.getValue()) {
-            mc.player.getInventory().setSelectedSlot(savedSlot);
+            if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(savedSlot);
         }
         savedSlot = -1;
         breakingShield = false;

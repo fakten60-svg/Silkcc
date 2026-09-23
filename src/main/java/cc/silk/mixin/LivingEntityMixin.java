@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(LivingEntity.class)
 public class LivingEntityMixin {
 
-    @Inject(method = "getHandSwingDuration", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getCurrentSwingDuration", at = @At("HEAD"), cancellable = true)
     public void getHandSwingDurationInject(CallbackInfoReturnable<Integer> cir) {
         if (SilkClient.INSTANCE == null || SilkClient.mc == null) return;
 

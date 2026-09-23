@@ -2,7 +2,6 @@ package cc.silk.mixin;
 
 import cc.silk.gui.ClickGui;
 import cc.silk.gui.newgui.NewClickGUI;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -18,12 +17,12 @@ public abstract class ScreenMixin {
 
     @Shadow
     @Nullable
-    protected Minecraft client;
+    protected Minecraft minecraft;
 
-    @Inject(method = "renderBackground", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "extractBackground", at = @At("HEAD"), cancellable = true)
     private void renderBackgroundInject(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        if (client == null) return;
-        Screen screen = client.screen;
+        if (minecraft == null) return;
+        Screen screen = minecraft.screen;
         if (screen instanceof ClickGui) {
             ci.cancel();
             return;
@@ -33,10 +32,10 @@ public abstract class ScreenMixin {
         }
     }
 
-    @Inject(method = "render", at = @At("TAIL"))
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void onRenderTail(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        if (client == null) return;
-        Screen screen = client.screen;
+        if (minecraft == null) return;
+        Screen screen = minecraft.screen;
         if (screen instanceof NewClickGUI || screen instanceof ClickGui) {
             
             

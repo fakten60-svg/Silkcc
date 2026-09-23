@@ -16,8 +16,8 @@ import static cc.silk.SilkClient.mc;
 
 @Mixin(AbstractContainerScreen.class)
 public class HandledScreenMixin {
-        @Inject(method = "drawSlot", at = @At("TAIL"))
-    public void postDrawSlot(GuiGraphicsExtractor context, Slot slot, CallbackInfo ci) {
+        @Inject(method = "extractSlot", at = @At("TAIL"))
+    public void postDrawSlot(GuiGraphicsExtractor context, Slot slot, int i, int j, CallbackInfo ci) {
         if (!SilkClient.INSTANCE.moduleManager.getModule(ContainerSlots.class).get().isEnabled()) return;
 
         if (ContainerSlots.highlightTotem.getValue() && slot.hasItem()) {

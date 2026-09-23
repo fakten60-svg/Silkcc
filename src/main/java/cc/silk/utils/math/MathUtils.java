@@ -6,7 +6,7 @@ import java.security.SecureRandom;
 
 @UtilityClass
 public final class MathUtils {
-    private final SecureRandom random = new SecureRandom();
+    private static final SecureRandom random = new SecureRandom();
 
     public static double randomDoubleBetween(double origin, double bound) {
         if (origin >= bound) {

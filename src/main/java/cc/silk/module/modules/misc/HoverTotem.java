@@ -121,8 +121,7 @@ public final class HoverTotem extends Module {
         if (!needsOffhand && !needsHotbar) return;
         long delay = generateNormalModeDelay();
         if (timer.hasElapsedTime(delay, true)) {
-            assert mc.player != null;
-            assert mc.gameMode != null;
+            if (mc.player == null || mc.gameMode == null) return;
             if (needsOffhand) {
                 mc.gameMode.handleContainerInput(mc.player.containerMenu.containerId, focusedSlot.getContainerSlot(), 40, ContainerInput.SWAP, mc.player);
             } else {

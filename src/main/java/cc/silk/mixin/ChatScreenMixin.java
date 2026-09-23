@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ChatScreen.class)
 public class ChatScreenMixin {
 
-    @Inject(method = "sendMessage", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "handleChatInput", at = @At("HEAD"), cancellable = true)
     private void onSendMessage(String chatText, boolean addToHistory, CallbackInfo ci) {
         ChatEvent event = new ChatEvent(chatText);
         SilkClient.INSTANCE.getSilkEventBus().post(event);
