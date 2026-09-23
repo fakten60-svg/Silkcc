@@ -1,7 +1,7 @@
 package cc.silk.utils.render;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 public class DraggableComponent {
@@ -22,19 +22,19 @@ public class DraggableComponent {
     }
 
     public void update() {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.mouse == null || mc.getWindow() == null)
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.mouseHandler == null || mc.getWindow() == null)
             return;
 
-        if (mc.currentScreen == null) {
+        if (mc.screen == null) {
             dragging = false;
             return;
         }
 
-        double mouseX = mc.mouse.getX() * mc.getWindow().getScaledWidth() / (double) mc.getWindow().getWidth();
-        double mouseY = mc.mouse.getY() * mc.getWindow().getScaledHeight() / (double) mc.getWindow().getHeight();
+        double mouseX = mc.mouseHandler.getScaledXPos(mc.getWindow()) * mc.getWindow().getGuiScaledWidth() / (double) mc.getWindow().getWidth();
+        double mouseY = mc.mouseHandler.getScaledYPos(mc.getWindow()) * mc.getWindow().getGuiScaledHeight() / (double) mc.getWindow().getHeight();
 
-        boolean leftClick = GLFW.glfwGetMouseButton(mc.getWindow().getHandle(),
+        boolean leftClick = GLFW.glfwGetMouseButton(mc.getWindow().handle(),
                 GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
 
         if (leftClick) {
@@ -50,8 +50,8 @@ public class DraggableComponent {
                 x = (float) mouseX - dragOffsetX;
                 y = (float) mouseY - dragOffsetY;
 
-                x = MathHelper.clamp(x, 0, mc.getWindow().getScaledWidth() - width);
-                y = MathHelper.clamp(y, 0, mc.getWindow().getScaledHeight() - height);
+                x = Mth.clamp(x, 0, mc.getWindow().getGuiScaledWidth() - width);
+                y = Mth.clamp(y, 0, mc.getWindow().getGuiScaledHeight() - height);
             }
         } else {
             dragging = false;

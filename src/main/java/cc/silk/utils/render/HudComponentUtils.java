@@ -1,7 +1,7 @@
 package cc.silk.utils.render;
 
 import lombok.experimental.UtilityClass;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -11,7 +11,7 @@ import java.util.List;
 @UtilityClass
 public final class HudComponentUtils {
 
-    public static void drawLineGraph(DrawContext context, int x, int y, int width, int height,
+    public static void drawLineGraph(GuiGraphicsExtractor context, int x, int y, int width, int height,
                                      List<Float> data, Color lineColor, Color fillColor, String title) {
         if (data.isEmpty()) return;
 
@@ -19,7 +19,7 @@ public final class HudComponentUtils {
                 GuiUtils.Colors.BACKGROUND_DARK.getRGB());
 
         if (title != null && !title.isEmpty()) {
-            GuiUtils.drawText(context, title, x + 8, y + 4, GuiUtils.Colors.TEXT_PRIMARY);
+            GuiUtils.text(context, title, x + 8, y + 4, GuiUtils.Colors.TEXT_PRIMARY);
             y += 16;
             height -= 16;
         }
@@ -75,13 +75,13 @@ public final class HudComponentUtils {
             RenderUtils.drawFilledCircle(context, xPoints[i], yPoints[i], 3, lineColor.getRGB());
         }
 
-        GuiUtils.drawText(context, String.format("%.1f", max), x + width - 30, y + 4,
+        GuiUtils.text(context, String.format("%.1f", max), x + width - 30, y + 4,
                 GuiUtils.Colors.TEXT_SECONDARY);
-        GuiUtils.drawText(context, String.format("%.1f", min), x + width - 30, y + height - 12,
+        GuiUtils.text(context, String.format("%.1f", min), x + width - 30, y + height - 12,
                 GuiUtils.Colors.TEXT_SECONDARY);
     }
 
-    public static void drawBarGraph(DrawContext context, int x, int y, int width, int height,
+    public static void drawBarGraph(GuiGraphicsExtractor context, int x, int y, int width, int height,
                                     List<Float> data, List<String> labels, Color barColor, String title) {
         if (data.isEmpty()) return;
 
@@ -89,7 +89,7 @@ public final class HudComponentUtils {
                 GuiUtils.Colors.BACKGROUND_DARK.getRGB());
 
         if (title != null && !title.isEmpty()) {
-            GuiUtils.drawText(context, title, x + 8, y + 4, GuiUtils.Colors.TEXT_PRIMARY);
+            GuiUtils.text(context, title, x + 8, y + 4, GuiUtils.Colors.TEXT_PRIMARY);
             y += 16;
             height -= 16;
         }
@@ -121,7 +121,7 @@ public final class HudComponentUtils {
         }
     }
 
-    public static void drawRadialMeter(DrawContext context, int centerX, int centerY, int radius,
+    public static void drawRadialMeter(GuiGraphicsExtractor context, int centerX, int centerY, int radius,
                                        float value, float maxValue, Color meterColor, String label) {
         value = Math.max(0, Math.min(maxValue, value));
         float percentage = value / maxValue;
@@ -149,16 +149,16 @@ public final class HudComponentUtils {
                 GuiUtils.Colors.TEXT_SECONDARY);
     }
 
-    public static void drawStatusBar(DrawContext context, int x, int y, int width, int height,
+    public static void drawStatusBar(GuiGraphicsExtractor context, int x, int y, int width, int height,
                                      String label, float current, float max, Color barColor) {
         RenderUtils.drawSmoothRoundedRect(context, x, y, width, height, 4,
                 GuiUtils.Colors.BACKGROUND_DARK.getRGB());
 
-        GuiUtils.drawText(context, label, x + 6, y + 4, GuiUtils.Colors.TEXT_PRIMARY);
+        GuiUtils.text(context, label, x + 6, y + 4, GuiUtils.Colors.TEXT_PRIMARY);
 
         String valueText = String.format("%.0f/%.0f", current, max);
         int textWidth = GuiUtils.getTextWidth(valueText);
-        GuiUtils.drawText(context, valueText, x + width - textWidth - 6, y + 4,
+        GuiUtils.text(context, valueText, x + width - textWidth - 6, y + 4,
                 GuiUtils.Colors.TEXT_SECONDARY);
 
         int barY = y + 16;
@@ -178,33 +178,33 @@ public final class HudComponentUtils {
         }
     }
 
-    public static void drawInfoPanel(DrawContext context, int x, int y, int width, int height,
+    public static void drawInfoPanel(GuiGraphicsExtractor context, int x, int y, int width, int height,
                                      String title, List<InfoItem> items) {
         RenderUtils.drawSmoothRoundedRect(context, x, y, width, height, 6,
                 GuiUtils.Colors.BACKGROUND_DARK.getRGB());
 
-        GuiUtils.drawText(context, title, x + 8, y + 8, GuiUtils.Colors.TEXT_PRIMARY);
+        GuiUtils.text(context, title, x + 8, y + 8, GuiUtils.Colors.TEXT_PRIMARY);
 
         context.fill(x + 8, y + 22, x + width - 8, y + 23,
                 GuiUtils.Colors.BORDER_LIGHT.getRGB());
 
         int currentY = y + 30;
         for (InfoItem item : items) {
-            GuiUtils.drawText(context, item.key, x + 8, currentY, GuiUtils.Colors.TEXT_SECONDARY);
+            GuiUtils.text(context, item.key, x + 8, currentY, GuiUtils.Colors.TEXT_SECONDARY);
 
             int valueWidth = GuiUtils.getTextWidth(item.value);
-            GuiUtils.drawText(context, item.value, x + width - valueWidth - 8, currentY,
+            GuiUtils.text(context, item.value, x + width - valueWidth - 8, currentY,
                     item.color != null ? item.color : GuiUtils.Colors.TEXT_PRIMARY);
 
             currentY += 14;
         }
     }
 
-    public static void drawMiniMap(DrawContext context, int x, int y, int size,
+    public static void drawMiniMap(GuiGraphicsExtractor context, int x, int y, int size,
                                    List<MapPoint> points, Color backgroundColor) {
         RenderUtils.drawSmoothRoundedRect(context, x, y, size, size, 6, backgroundColor.getRGB());
 
-        GuiUtils.drawBorder(context, x, y, size, size, 6, 1, GuiUtils.Colors.BORDER_LIGHT);
+        GuiUtils.outline(context, x, y, size, size, 6, 1, GuiUtils.Colors.BORDER_LIGHT);
 
         int centerX = x + size / 2;
         int centerY = y + size / 2;
@@ -223,7 +223,7 @@ public final class HudComponentUtils {
         }
     }
 
-    private static void drawTrapezoid(DrawContext context, int x1, int y1, int x2, int y2,
+    private static void drawTrapezoid(GuiGraphicsExtractor context, int x1, int y1, int x2, int y2,
                                       int baseY, Color color) {
         int steps = Math.abs(x2 - x1);
         if (steps == 0) return;
@@ -237,7 +237,7 @@ public final class HudComponentUtils {
         }
     }
 
-    private static void drawLine(DrawContext context, int x1, int y1, int x2, int y2,
+    private static void drawLine(GuiGraphicsExtractor context, int x1, int y1, int x2, int y2,
                                  int thickness, Color color) {
         int dx = Math.abs(x2 - x1);
         int dy = Math.abs(y2 - y1);
@@ -269,7 +269,7 @@ public final class HudComponentUtils {
         }
     }
 
-    private static void drawArc(DrawContext context, int centerX, int centerY, int radius,
+    private static void drawArc(GuiGraphicsExtractor context, int centerX, int centerY, int radius,
                                 int startAngle, int endAngle, int thickness, Color color) {
         for (int angle = startAngle; angle <= endAngle; angle += 2) {
             double radians = Math.toRadians(angle);

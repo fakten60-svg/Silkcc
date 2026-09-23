@@ -6,8 +6,8 @@ import cc.silk.module.Category;
 import cc.silk.module.Module;
 import cc.silk.module.setting.NumberSetting;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public class CoverUp extends Module {
 
@@ -39,25 +39,25 @@ public class CoverUp extends Module {
             return;
         }
 
-        savedSlot = mc.player.getInventory().selectedSlot;
-        savedYaw = mc.player.getYaw();
-        savedPitch = mc.player.getPitch();
+        savedSlot = mc.player.getInventory().getSelectedSlot();
+        savedYaw = mc.player.getYRot();
+        savedPitch = mc.player.getXRot();
 
         isPlacing = true;
         placementStep = 0;
         lastPlaceTime = System.currentTimeMillis();
         hasRotated = false;
 
-        mc.player.setYaw(savedYaw);
-        mc.player.setPitch(89.5f);
+        mc.player.setYRot(savedYaw);
+        mc.player.setXRot(89.5f);
     }
 
     @Override
     public void onDisable() {
         if (!isNull() && savedSlot != -1) {
-            mc.player.getInventory().selectedSlot = savedSlot;
-            mc.player.setYaw(savedYaw);
-            mc.player.setPitch(savedPitch);
+            mc.player.getInventory().setSelectedSlot(savedSlot);
+            mc.player.setYRot(savedYaw);
+            mc.player.setXRot(savedPitch);
         }
 
         isPlacing = false;
@@ -96,13 +96,13 @@ public class CoverUp extends Module {
             return;
         }
 
-        mc.player.getInventory().selectedSlot = cobwebSlot;
+        mc.player.getInventory().setSelectedSlot(cobwebSlot);
         ((MinecraftClientAccessor) mc).invokeDoItemUse();
     }
 
     private int getCobwebSlot() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (stack.getItem() == Items.COBWEB) {
                 return i;
             }

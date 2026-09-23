@@ -1,14 +1,14 @@
-package cc.silk.event.impl.world;
+package cc.silk.event.impl.level;
 
 import cc.silk.event.types.Event;
 import lombok.Getter;
-import net.minecraft.client.world.ClientWorld;
+import net.minecraft.client.multiplayer.ClientLevel;
 
 @Getter
 public class WorldChangeEvent implements Event {
-    ClientWorld world;
+    ClientLevel level;
 
-    public WorldChangeEvent(ClientWorld world) {
-        this.world = world;
+    public WorldChangeEvent(ClientLevel level) {
+        this.level = level;
     }
 }

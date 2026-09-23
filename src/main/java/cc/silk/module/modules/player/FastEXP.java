@@ -8,8 +8,8 @@ import cc.silk.module.Module;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.keybinding.KeyUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.lwjgl.glfw.GLFW;
 
 public final class FastEXP extends Module {
@@ -24,9 +24,9 @@ public final class FastEXP extends Module {
     @EventHandler
     private void onTickEvent(TickEvent event) {
         if (isNull()) return;
-        if (mc.currentScreen != null) return;
+        if (mc.screen != null) return;
 
-        ItemStack heldItem = mc.player.getMainHandStack();
+        ItemStack heldItem = mc.player.getMainHandItem();
         if (heldItem.isEmpty() || heldItem.getItem() != Items.EXPERIENCE_BOTTLE) return;
 
         if (!KeyUtils.isKeyPressed(GLFW.GLFW_MOUSE_BUTTON_2)) {

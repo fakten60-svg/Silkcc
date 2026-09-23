@@ -8,6 +8,6 @@ import static cc.silk.SilkClient.mc;
 public final class MovementUtil {
 
     public static boolean isMoving() {
-        return mc.options.forwardKey.isPressed() || mc.options.backKey.isPressed() || mc.options.leftKey.isPressed() || mc.options.rightKey.isPressed();
+        return mc.options.keyUp.isDown() || mc.options.keyDown.isDown() || mc.options.keyLeft.isDown() || mc.options.keyRight.isDown();
     }
 }

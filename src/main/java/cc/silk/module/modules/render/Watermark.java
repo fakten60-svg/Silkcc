@@ -7,7 +7,7 @@ import cc.silk.module.setting.*;
 import cc.silk.utils.render.DraggableComponent;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.gui.screens.ChatScreen;
 
 import java.awt.*;
 
@@ -49,19 +49,19 @@ public class Watermark extends Module {
 
     @EventHandler
     private void onRender2D(Render2DEvent event) {
-        if (mc.player == null || mc.world == null)
+        if (mc.player == null || mc.level == null)
             return;
         if (text.getValue().isEmpty())
             return;
 
         if (draggable == null) {
-            int screenWidth = mc.getWindow().getScaledWidth();
+            int screenWidth = mc.getWindow().getGuiScaledWidth();
             draggable = new DraggableComponent(screenWidth / 2f, 10, 200, 30);
             needsInitialCenter = true;
         }
 
-        boolean isInChat = mc.currentScreen instanceof ChatScreen;
-        if (mc.currentScreen != null && !isInChat)
+        boolean isInChat = mc.screen instanceof ChatScreen;
+        if (mc.screen != null && !isInChat)
             return;
 
         NanoVGRenderer.beginFrame();
@@ -83,11 +83,11 @@ public class Watermark extends Module {
         float iconSpacing = 4;
 
         String title = text.getValue();
-        int fps = mc.getCurrentFps();
+        int fps = mc.getFps();
 
         int ping = 0;
-        if (mc.getNetworkHandler() != null && mc.player != null) {
-            var playerEntry = mc.getNetworkHandler().getPlayerListEntry(mc.player.getUuid());
+        if (mc.getConnection() != null && mc.player != null) {
+            var playerEntry = mc.getConnection().getPlayerInfo(mc.player.getUUID());
             if (playerEntry != null) {
                 ping = playerEntry.getLatency();
             }
@@ -112,7 +112,7 @@ public class Watermark extends Module {
         draggable.setHeight(bgHeight);
 
         if (needsInitialCenter) {
-            int screenWidth = mc.getWindow().getScaledWidth();
+            int screenWidth = mc.getWindow().getGuiScaledWidth();
             draggable.setX(screenWidth / 2f - bgWidth / 2f);
             needsInitialCenter = false;
         }
@@ -198,7 +198,7 @@ public class Watermark extends Module {
         draggable.setHeight(bgHeight);
 
         if (needsInitialCenter) {
-            int screenWidth = mc.getWindow().getScaledWidth();
+            int screenWidth = mc.getWindow().getGuiScaledWidth();
             draggable.setX(screenWidth / 2f - bgWidth / 2f);
             needsInitialCenter = false;
         }
@@ -225,7 +225,7 @@ public class Watermark extends Module {
     }
 
     private void snapToCenter(float width) {
-        int screenWidth = mc.getWindow().getScaledWidth();
+        int screenWidth = mc.getWindow().getGuiScaledWidth();
         float centerX = screenWidth / 2f;
         float componentCenterX = draggable.getX() + width / 2f;
 
@@ -243,11 +243,11 @@ public class Watermark extends Module {
     }
 
     private String getIP() {
-        if (mc.world == null)
+        if (mc.level == null)
             return "NULL";
-        if (mc.isInSingleplayer())
+        if (mc.hasSingleplayerServer())
             return "Singleplayer";
-        return mc.getCurrentServerEntry().address;
+        return mc.getCurrentServer().ip;
     }
 
     private void drawWaveText(String s, float x, float y, float size, Color baseColor) {

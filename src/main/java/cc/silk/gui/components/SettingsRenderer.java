@@ -8,9 +8,9 @@ import cc.silk.utils.keybinding.KeyUtils;
 import cc.silk.gui.events.GuiEventHandler;
 import cc.silk.module.Module;
 import cc.silk.utils.render.font.fonts.FontRenderer;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import com.mojang.blaze3d.vertex.PoseStack;
 
 import java.awt.*;
 import java.util.HashMap;
@@ -20,12 +20,12 @@ public class SettingsRenderer {
     private static final int SETTING_HEIGHT = 28;
     private static final Map<Setting, Float> animatedValues = new HashMap<>();
 
-    public static int renderModuleSettings(DrawContext context, Module module, int x, int moduleY, int width, float animation, FontRenderer smallFont, Map<ModeSetting, Boolean> dropdownExpanded, GuiEventHandler eventHandler) {
+    public static int renderModuleSettings(GuiGraphicsExtractor context, Module module, int x, int moduleY, int width, float animation, FontRenderer smallFont, Map<ModeSetting, Boolean> dropdownExpanded, GuiEventHandler eventHandler) {
         if (module.getSettings() == null || module.getSettings().isEmpty()) {
             return 0;
         }
 
-        MatrixStack matrices = context.getMatrices();
+        PoseStack matrices = new PoseStack();
 
         int settingsHeight = module.getSettings().size() * SETTING_HEIGHT;
         float effectiveAnimation = animation < 0.22f ? 0f : animation;
@@ -72,12 +72,12 @@ public class SettingsRenderer {
         return settingsHeight;
     }
 
-    private static void renderModeDropdownOverlay(DrawContext context, ModeSetting modeSetting, int x, int y, int width, int height) {
+    private static void renderModeDropdownOverlay(GuiGraphicsExtractor context, ModeSetting modeSetting, int x, int y, int width, int height) {
         String currentMode = modeSetting.getMode();
         Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
         context.fill(x, y, x + width, y + height, applyAlpha(theme.panelBg(), 200).getRGB());
-        context.drawBorder(x, y, width, height, applyAlpha(theme.muted(), 200).getRGB());
-        context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, currentMode, x + 4, y + 3, theme.text().getRGB());
+        context.outline(x, y, width, height, applyAlpha(theme.muted(), 200).getRGB());
+        context.text(Minecraft.getInstance().font, currentMode, x + 4, y + 3, theme.text().getRGB());
 
         int arrowX = x + width - 12;
         int arrowY = y + height / 2;
@@ -91,22 +91,22 @@ public class SettingsRenderer {
             Color bg = isSelected ? applyAlpha(theme.accent(), 200) : applyAlpha(theme.panelBg(), 200);
 
             context.fill(x, optionY, x + width, optionY + height, bg.getRGB());
-            context.drawBorder(x, optionY, width, height, applyAlpha(theme.muted(), 180).getRGB());
+            context.outline(x, optionY, width, height, applyAlpha(theme.muted(), 180).getRGB());
 
             String text = mode.length() > 8 ? mode.substring(0, 8) + "..." : mode;
             Color textColor = isSelected ? theme.accent() : theme.text();
-            context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, text, x + 4, optionY + 3, textColor.getRGB());
+            context.text(Minecraft.getInstance().font, text, x + 4, optionY + 3, textColor.getRGB());
 
             optionY += height;
         }
     }
 
-    public static int renderModuleSettingsInGrid(DrawContext context, Module module, int x, int moduleY, int width, float animation, FontRenderer smallFont) {
+    public static int renderModuleSettingsInGrid(GuiGraphicsExtractor context, Module module, int x, int moduleY, int width, float animation, FontRenderer smallFont) {
         if (module.getSettings() == null || module.getSettings().isEmpty()) {
             return 0;
         }
 
-        MatrixStack matrices = context.getMatrices();
+        PoseStack matrices = new PoseStack();
         int rows = (int) Math.ceil(module.getSettings().size() / 2.0);
         int settingsHeight = rows * SETTING_HEIGHT;
         int animatedHeight = (int) (settingsHeight * animation);
@@ -142,7 +142,7 @@ public class SettingsRenderer {
         return settingsHeight;
     }
 
-    private static void renderSettingControl(DrawContext context, Setting setting, int x, int settingY, int width, int maxControlWidth, Map<ModeSetting, Boolean> dropdownExpanded, GuiEventHandler eventHandler, FontRenderer smallFont) {
+    private static void renderSettingControl(GuiGraphicsExtractor context, Setting setting, int x, int settingY, int width, int maxControlWidth, Map<ModeSetting, Boolean> dropdownExpanded, GuiEventHandler eventHandler, FontRenderer smallFont) {
         int controlX = x + width - 18 - maxControlWidth - 12;
         int controlY = settingY + (SETTING_HEIGHT - 15) / 2;
         int controlWidth = maxControlWidth;
@@ -151,7 +151,7 @@ public class SettingsRenderer {
         renderSettingControlCommon(context, setting, controlX, controlY, controlWidth, controlHeight, dropdownExpanded, eventHandler, smallFont);
     }
 
-    private static void renderSettingControlInGrid(DrawContext context, Setting setting, int settingX, int settingY, int columnWidth, FontRenderer smallFont) {
+    private static void renderSettingControlInGrid(GuiGraphicsExtractor context, Setting setting, int settingX, int settingY, int columnWidth, FontRenderer smallFont) {
         int maxControlWidth = Math.min(80, columnWidth - 20);
         int controlX = settingX + columnWidth - maxControlWidth - 10;
         int controlY = settingY + (SETTING_HEIGHT - 15) / 2;
@@ -161,7 +161,7 @@ public class SettingsRenderer {
         renderSettingControlCommon(context, setting, controlX, controlY, controlWidth, controlHeight, null, null, smallFont);
     }
 
-    private static void renderSettingControlCommon(DrawContext context, Setting setting, int controlX, int controlY, int controlWidth, int controlHeight, Map<ModeSetting, Boolean> dropdownExpanded, GuiEventHandler eventHandler, FontRenderer smallFont) {
+    private static void renderSettingControlCommon(GuiGraphicsExtractor context, Setting setting, int controlX, int controlY, int controlWidth, int controlHeight, Map<ModeSetting, Boolean> dropdownExpanded, GuiEventHandler eventHandler, FontRenderer smallFont) {
         float prev = animatedValues.getOrDefault(setting, 0f);
         Theme theme = ThemeManager.getTheme(ClickGUIModule.theme.getMode());
         switch (setting) {
@@ -196,7 +196,7 @@ public class SettingsRenderer {
 
                 if (isEditing) {
                     String inputText = eventHandler.getNumberInputText();
-                    int textWidth = MinecraftClient.getInstance().textRenderer.getWidth(inputText + "|");
+                    int textWidth = Minecraft.getInstance().font.width(inputText + "|");
                     int inputX = controlX + controlWidth + 5;
                     int inputY = controlY + 1;
                     int inputWidth = Math.max(30, textWidth + 4);
@@ -204,17 +204,17 @@ public class SettingsRenderer {
 
             context.fill(inputX - 2, inputY, inputX + inputWidth, inputY + inputHeight,
                 applyAlpha(theme.panelBg(), 220).getRGB());
-            context.drawBorder(inputX - 2, inputY, inputWidth, inputHeight,
+            context.outline(inputX - 2, inputY, inputWidth, inputHeight,
                 applyAlpha(theme.accent(), 200).getRGB());
 
                     String displayText = inputText + "|";
-                    smallFont.drawString(context.getMatrices(), displayText, inputX, controlY + 2, new Color(255, 255, 255));
+                    context.text(Minecraft.getInstance().font, displayText, inputX, controlY + 2, 0xFFFFFF, false);
                 } else {
                     String valueText = String.valueOf(value);
                     if (valueText.endsWith(".0")) {
                         valueText = valueText.substring(0, valueText.length() - 2);
                     }
-            context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, valueText,
+            context.text(Minecraft.getInstance().font, valueText,
                 controlX + controlWidth + 5, controlY + 2, theme.muted().getRGB());
                 }
             }
@@ -225,10 +225,10 @@ public class SettingsRenderer {
 
         context.fill(controlX, controlY, controlX + controlWidth, controlY + controlHeight,
             applyAlpha(theme.panelBg(), 200).getRGB());
-        context.drawBorder(controlX, controlY, controlWidth, controlHeight,
+        context.outline(controlX, controlY, controlWidth, controlHeight,
             applyAlpha(theme.muted(), 200).getRGB());
 
-        context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, displayText,
+        context.text(Minecraft.getInstance().font, displayText,
             controlX + 4, controlY + 3, theme.text().getRGB());
 
                 int arrowX = controlX + controlWidth - 12;
@@ -249,12 +249,12 @@ public class SettingsRenderer {
 
             context.fill(controlX, optionY, controlX + controlWidth, optionY + controlHeight,
                 optionBg.getRGB());
-            context.drawBorder(controlX, optionY, controlWidth, controlHeight,
+            context.outline(controlX, optionY, controlWidth, controlHeight,
                 applyAlpha(theme.muted(), 180).getRGB());
 
             String optionText = mode.length() > 8 ? mode.substring(0, 8) + "..." : mode;
             Color textColor = isSelected ? theme.accent() : theme.text();
-            context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, optionText,
+            context.text(Minecraft.getInstance().font, optionText,
                 controlX + 4, optionY + 3, textColor.getRGB());
 
                         optionY += controlHeight;
@@ -266,8 +266,8 @@ public class SettingsRenderer {
                 String displayKey = keybindSetting.isListening() ? "..." : KeyUtils.getKey(keybindSetting.getKeyCode());
 
                 context.fill(controlX, controlY, controlX + controlWidth, controlY + controlHeight, new Color(36, 36, 40).getRGB());
-                context.drawBorder(controlX, controlY, controlWidth, controlHeight, new Color(90, 90, 90).getRGB());
-                context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, displayKey, controlX + 4, controlY + 3, new Color(255, 255, 255).getRGB());
+                context.outline(controlX, controlY, controlWidth, controlHeight, new Color(90, 90, 90).getRGB());
+                context.text(Minecraft.getInstance().font, displayKey, controlX + 4, controlY + 3, new Color(255, 255, 255).getRGB());
             }
 
             case ColorSetting colorSetting -> {
@@ -282,9 +282,9 @@ public class SettingsRenderer {
                 }
 
                 context.fill(previewX, previewY, previewX + previewSize, previewY + previewSize, currentColor.getRGB());
-                context.drawBorder(previewX, previewY, previewSize, previewSize, new Color(100, 100, 100).getRGB());
+                context.outline(previewX, previewY, previewSize, previewSize, new Color(100, 100, 100).getRGB());
 
-                context.drawTextWithShadow(MinecraftClient.getInstance().textRenderer, "Color (Click)",
+                context.text(Minecraft.getInstance().font, "Color (Click)",
                         controlX + 4, controlY + 3, new Color(200, 200, 200).getRGB());
             }
 
@@ -293,7 +293,7 @@ public class SettingsRenderer {
         }
     }
 
-    private static void renderCheckerboard(DrawContext context, int x, int y, int width, int height) {
+    private static void renderCheckerboard(GuiGraphicsExtractor context, int x, int y, int width, int height) {
         int checkSize = 4;
         for (int i = 0; i < width; i += checkSize) {
             for (int j = 0; j < height; j += checkSize) {

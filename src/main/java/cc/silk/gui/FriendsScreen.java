@@ -3,10 +3,13 @@ package cc.silk.gui;
 import cc.silk.utils.friend.FriendManager;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
 import cc.silk.utils.render.GuiGlowHelper;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.network.chat.Component;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -41,7 +44,7 @@ public class FriendsScreen extends Screen {
     private static final int PADDING = 10;
 
     public FriendsScreen() {
-        super(Text.literal("Friends"));
+        super(Component.literal("Friends"));
     }
 
     @Override
@@ -52,14 +55,14 @@ public class FriendsScreen extends Screen {
 
     private void updatePlayerList() {
         playerEntries.clear();
-        if (client == null || client.getNetworkHandler() == null)
+        if (minecraft == null || minecraft.getConnection() == null)
             return;
 
-        for (PlayerListEntry entry : client.getNetworkHandler().getPlayerList()) {
+        for (PlayerInfo entry : minecraft.getConnection().getOnlinePlayers()) {
             if (entry.getProfile() == null)
                 continue;
-            String name = entry.getProfile().getName();
-            UUID uuid = entry.getProfile().getId();
+            String name = entry.getProfile().name();
+            UUID uuid = entry.getProfile().id();
 
             if (searchQuery.isEmpty() || name.toLowerCase().contains(searchQuery.toLowerCase())) {
                 playerEntries.add(new PlayerEntry(name, uuid));
@@ -70,8 +73,8 @@ public class FriendsScreen extends Screen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
         long currentTime = System.currentTimeMillis();
         float deltaTime = (currentTime - lastFrameTime) / 1000f;
@@ -260,7 +263,10 @@ public class FriendsScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         int panelX = (width - PANEL_WIDTH) / 2;
         int panelY = (height - PANEL_HEIGHT) / 2;
 
@@ -278,31 +284,36 @@ public class FriendsScreen extends Screen {
 
         if (button == 0 && hoveredPlayer != null) {
             FriendManager.toggleFriend(hoveredPlayer.uuid);
-            if (client != null && client.player != null) {
+            if (minecraft != null && minecraft.player != null) {
                 if (FriendManager.isFriend(hoveredPlayer.uuid)) {
-                    client.player.sendMessage(Text.literal("§a" + hoveredPlayer.name + " added to friends"), false);
+                    minecraft.player.sendSystemMessage(Component.literal("§a" + hoveredPlayer.name + " added to friends"));
                 } else {
-                    client.player.sendMessage(Text.literal("§c" + hoveredPlayer.name + " removed from friends"), false);
+                    minecraft.player.sendSystemMessage(Component.literal("§c" + hoveredPlayer.name + " removed from friends"));
                 }
             }
             return true;
         }
 
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
+    public boolean charTyped(CharacterEvent event) {
+        char chr = (char) event.codepoint();
+        int modifiers = 0;
         if (searchFocused) {
             searchQuery += chr;
             updatePlayerList();
             return true;
         }
-        return super.charTyped(chr, modifiers);
+        return super.charTyped(event);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
+        int modifiers = event.modifiers();
         if (searchFocused) {
             if (keyCode == 259) {
                 if (!searchQuery.isEmpty()) {
@@ -315,7 +326,7 @@ public class FriendsScreen extends Screen {
                 return true;
             }
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
@@ -341,14 +352,14 @@ public class FriendsScreen extends Screen {
     }
 
     @Override
-    public boolean shouldPause() {
+    public boolean isPauseScreen() {
         return false;
     }
 
     @Override
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         if (cc.silk.module.modules.client.ClientSettingsModule.isGuiBlurEnabled()) {
-            super.renderBackground(context, mouseX, mouseY, delta);
+            super.extractBackground(context, mouseX, mouseY, delta);
         }
     }
 

@@ -2,19 +2,19 @@ package cc.silk.module.modules.misc;
 
 import com.mojang.authlib.GameProfile;
 import cc.silk.event.impl.player.AttackEvent;
-import cc.silk.event.impl.world.WorldChangeEvent;
+import cc.silk.event.impl.level.WorldChangeEvent;
 import cc.silk.module.Category;
 import cc.silk.module.Module;
 import cc.silk.module.setting.BooleanSetting;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.network.OtherClientPlayerEntity;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.sound.SoundEvents;
+import net.minecraft.client.player.RemotePlayer;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
 
 import java.util.UUID;
 
@@ -22,7 +22,7 @@ public class FakePlayer extends Module {
     private final BooleanSetting invincible = new BooleanSetting("Invincible", false);
     private final BooleanSetting criticalHits = new BooleanSetting("Critical Hits", true);
     private final BooleanSetting useTotem = new BooleanSetting("Use Totem", false);
-    private OtherClientPlayerEntity fakePlayer;
+    private RemotePlayer fakePlayer;
     private float fakePlayerHealth = 20.0f;
     private long lastHitTime = 0;
     private int hitCount = 0;
@@ -63,15 +63,15 @@ public class FakePlayer extends Module {
         if (mc.player == null)
             return false;
 
-        boolean isFalling = mc.player.getVelocity().y < -0.08F;
-        boolean isSneaking = mc.player.isSneaking();
-        boolean isOnGround = mc.player.isOnGround();
+        boolean isFalling = mc.player.getDeltaMovement().y < -0.08F;
+        boolean isSneaking = mc.player.isShiftKeyDown();
+        boolean onGround = mc.player.onGround();
         boolean isUsingItem = mc.player.isUsingItem();
         boolean isRiding = mc.player.getVehicle() != null;
-        boolean isInWater = mc.player.isTouchingWater();
+        boolean isInWater = mc.player.isInWater();
         boolean isInLava = mc.player.isInLava();
 
-        return isFalling && !isSneaking && !isOnGround && !isUsingItem && !isRiding && !isInWater && !isInLava;
+        return isFalling && !isSneaking && !onGround && !isUsingItem && !isRiding && !isInWater && !isInLava;
     }
 
     private void handleFakePlayerHit(boolean isCritical) {
@@ -109,14 +109,14 @@ public class FakePlayer extends Module {
     }
 
     private void addDamageEffects(boolean isCritical) {
-        if (fakePlayer == null || mc.world == null)
+        if (fakePlayer == null || mc.level == null)
             return;
         int particleCount = isCritical ? 8 : 5;
         for (int i = 0; i < particleCount; i++) {
             double offsetX = (Math.random() - 0.5) * 0.5;
             double offsetY = Math.random() * 1.8;
             double offsetZ = (Math.random() - 0.5) * 0.5;
-            mc.world.addParticle(ParticleTypes.DAMAGE_INDICATOR,
+            mc.level.addParticle(ParticleTypes.DAMAGE_INDICATOR,
                     fakePlayer.getX() + offsetX,
                     fakePlayer.getY() + offsetY,
                     fakePlayer.getZ() + offsetZ,
@@ -127,7 +127,7 @@ public class FakePlayer extends Module {
                 double offsetX = (Math.random() - 0.5) * 0.8;
                 double offsetY = Math.random() * 1.8;
                 double offsetZ = (Math.random() - 0.5) * 0.8;
-                mc.world.addParticle(ParticleTypes.CRIT,
+                mc.level.addParticle(ParticleTypes.CRIT,
                         fakePlayer.getX() + offsetX,
                         fakePlayer.getY() + offsetY,
                         fakePlayer.getZ() + offsetZ,
@@ -135,12 +135,10 @@ public class FakePlayer extends Module {
             }
         }
         if (isCritical && criticalHits.getValue()) {
-            mc.world.playSound(mc.player, fakePlayer.getBlockPos(),
-                    SoundEvents.ENTITY_PLAYER_ATTACK_CRIT, fakePlayer.getSoundCategory(),
-                    1.0f, 1.0f);
+            mc.level.playSound(mc.player, fakePlayer.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, fakePlayer.getSoundSource(), 1.0f, 1.0f);
         } else {
-            mc.world.playSound(mc.player, fakePlayer.getBlockPos(),
-                    SoundEvents.ENTITY_PLAYER_HURT, fakePlayer.getSoundCategory(),
+            mc.level.playSound(mc.player, fakePlayer.blockPosition(),
+                    SoundEvents.PLAYER_HURT, fakePlayer.getSoundSource(),
                     1.0f, 1.0f);
         }
         fakePlayer.hurtTime = 10;
@@ -163,29 +161,29 @@ public class FakePlayer extends Module {
     }
 
     private void popTotem() {
-        if (fakePlayer == null || mc.world == null)
+        if (fakePlayer == null || mc.level == null)
             return;
-        fakePlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, 100, 1));
-        fakePlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 800, 1));
-        mc.world.playSound(fakePlayer.getX(), fakePlayer.getY(), fakePlayer.getZ(),
-                SoundEvents.ITEM_TOTEM_USE, fakePlayer.getSoundCategory(),
-                1.0f, 1.0f, false);
+        fakePlayer.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 100, 1));
+        fakePlayer.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 800, 1));
+        mc.level.playSound(null, fakePlayer.getX(), fakePlayer.getY(), fakePlayer.getZ(),
+                SoundEvents.TOTEM_USE, fakePlayer.getSoundSource(),
+                1.0f, 1.0f);
         for (int i = 0; i < 30; i++) {
-            double offsetX = (mc.world.random.nextDouble() - 0.5) * 2.0;
-            double offsetY = mc.world.random.nextDouble() * 2.0;
-            double offsetZ = (mc.world.random.nextDouble() - 0.5) * 2.0;
-            mc.world.addParticle(ParticleTypes.TOTEM_OF_UNDYING,
+            double offsetX = (mc.level.getRandom().nextDouble() - 0.5) * 2.0;
+            double offsetY = mc.level.getRandom().nextDouble() * 2.0;
+            double offsetZ = (mc.level.getRandom().nextDouble() - 0.5) * 2.0;
+            mc.level.addParticle(ParticleTypes.TOTEM_OF_UNDYING,
                     fakePlayer.getX() + offsetX,
                     fakePlayer.getY() + offsetY,
                     fakePlayer.getZ() + offsetZ,
                     0, 0.1, 0);
         }
-        fakePlayer.equipStack(EquipmentSlot.OFFHAND, new ItemStack(Items.TOTEM_OF_UNDYING));
+        fakePlayer.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.TOTEM_OF_UNDYING));
         new Thread(() -> {
             try {
                 Thread.sleep(500);
                 if (fakePlayer != null) {
-                    fakePlayer.equipStack(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
+                    fakePlayer.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -196,27 +194,29 @@ public class FakePlayer extends Module {
     private void spawnFakePlayer() {
         if (isNull())
             return;
-        if (!mc.isInSingleplayer())
+        if (!mc.hasSingleplayerServer())
             return;
         if (fakePlayer != null)
             return;
         GameProfile original = mc.player.getGameProfile();
-        GameProfile profile = new GameProfile(UUID.randomUUID(), original.getName());
-        profile.getProperties().putAll(original.getProperties());
+        GameProfile profile = new GameProfile(UUID.randomUUID(), original.name());
+        profile.properties().putAll(original.properties());
 
-        OtherClientPlayerEntity other = new OtherClientPlayerEntity(mc.world, profile);
-        other.copyPositionAndRotation(mc.player);
-        other.setYaw(mc.player.getYaw());
-        other.setPitch(mc.player.getPitch());
+        RemotePlayer other = new RemotePlayer(mc.level, profile);
+        other.setPos(mc.player.getX(), mc.player.getY(), mc.player.getZ());
+                other.setYRot(mc.player.getYRot());
+                other.setXRot(mc.player.getXRot());
+        other.setYRot(mc.player.getYRot());
+        other.setXRot(mc.player.getXRot());
 
         for (EquipmentSlot slot : EquipmentSlot.values()) {
-            ItemStack stack = mc.player.getEquippedStack(slot);
+            ItemStack stack = mc.player.getItemBySlot(slot);
             if (!stack.isEmpty()) {
-                other.equipStack(slot, stack.copy());
+                other.setItemSlot(slot, stack.copy());
             }
         }
 
-        mc.world.addEntity(other);
+        mc.level.addEntity(other);
 
         fakePlayer = other;
     }

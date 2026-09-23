@@ -6,14 +6,14 @@ import cc.silk.module.Category;
 import cc.silk.module.Module;
 import cc.silk.module.setting.BooleanSetting;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.ClipContext;
 
 public final class AutoCart extends Module {
 
@@ -59,7 +59,7 @@ public final class AutoCart extends Module {
     private void startPlacing() {
         if (isActive) return;
 
-        if (mc.player.getMainHandStack().getItem() != Items.BOW) {
+        if (mc.player.getMainHandItem().getItem() != Items.BOW) {
             return;
         }
 
@@ -69,7 +69,7 @@ public final class AutoCart extends Module {
         this.targetPos = targetPos;
         isActive = true;
         tickCounter = 0;
-        originalSlot = mc.player.getInventory().selectedSlot;
+        originalSlot = mc.player.getInventory().getSelectedSlot();
     }
 
 
@@ -77,7 +77,7 @@ public final class AutoCart extends Module {
         if (!isActive) return;
 
         if (autoSwitch.getValue() && originalSlot != -1) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
         }
 
         resetState();
@@ -98,7 +98,7 @@ public final class AutoCart extends Module {
         int railSlot = findAnyRailInHotbar();
         if (railSlot == -1) return;
 
-        mc.player.getInventory().selectedSlot = railSlot;
+        mc.player.getInventory().setSelectedSlot(railSlot);
         ((MinecraftClientAccessor) mc).invokeDoItemUse();
         hasRail = true;
     }
@@ -112,39 +112,39 @@ public final class AutoCart extends Module {
         int tntCartSlot = findItemInHotbar();
         if (tntCartSlot == -1) return;
 
-        mc.player.getInventory().selectedSlot = tntCartSlot;
+        mc.player.getInventory().setSelectedSlot(tntCartSlot);
         ((MinecraftClientAccessor) mc).invokeDoItemUse();
         hasTntCart = true;
     }
 
     private BlockPos getTargetPosition() {
-        HitResult hitResult = mc.crosshairTarget;
+        HitResult hitResult = mc.hitResult;
         if (hitResult == null) return null;
         
         if (hitResult.getType() == HitResult.Type.BLOCK) {
             BlockHitResult blockHit = (BlockHitResult) hitResult;
-            return blockHit.getBlockPos().offset(blockHit.getSide());
+            return blockHit.getBlockPos().relative(blockHit.getDirection());
         } else if (hitResult.getType() == HitResult.Type.ENTITY) {
-            return mc.player.getBlockPos().add(0, 1, 0);
+            return mc.player.blockPosition().offset(0, 1, 0);
         } else {
-            Vec3d cameraPos = mc.player.getCameraPosVec(1.0f);
-            Vec3d rotation = mc.player.getRotationVec(1.0f);
-            Vec3d end = cameraPos.add(rotation.multiply(5.0));
+            Vec3 cameraPos = mc.player.getEyePosition(1.0f);
+            Vec3 rotation = mc.player.getViewVector(1.0f);
+            Vec3 end = cameraPos.add(rotation.scale(5.0));
             
-            BlockHitResult blockHit = mc.world.raycast(new RaycastContext(cameraPos, end, 
-                RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, mc.player));
+            BlockHitResult blockHit = mc.level.clip(new ClipContext(cameraPos, end, 
+                ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, mc.player));
             
             if (blockHit != null) {
-                return blockHit.getBlockPos().offset(blockHit.getSide());
+                return blockHit.getBlockPos().relative(blockHit.getDirection());
             } else {
-                return mc.player.getBlockPos().add(0, 1, 0);
+                return mc.player.blockPosition().offset(0, 1, 0);
             }
         }
     }
 
     private int findItemInHotbar() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (!stack.isEmpty() && stack.getItem() == Items.TNT_MINECART) {
                 return i;
             }
@@ -154,7 +154,7 @@ public final class AutoCart extends Module {
 
     private int findAnyRailInHotbar() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (!stack.isEmpty() && isRail(stack.getItem())) {
                 return i;
             }

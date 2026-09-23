@@ -3,15 +3,15 @@ package cc.silk.module.modules.combat;
 import cc.silk.event.impl.player.TickEvent;
 import cc.silk.module.Category;
 import cc.silk.module.Module;
+import cc.silk.utils.mc.InventoryUtil;
 import cc.silk.module.setting.BooleanSetting;
 import cc.silk.module.setting.KeybindSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.keybinding.KeyUtils;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.item.SwordItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.lwjgl.glfw.GLFW;
 
 public final class SwordHotSwap extends Module {
@@ -42,8 +42,8 @@ public final class SwordHotSwap extends Module {
         }
 
         if (!currentKeyState && keyPressed && switchBack.getValue() && originalSlot != -1) {
-            if (mc.player.getInventory().selectedSlot == findShieldInHotbar()) {
-                mc.player.getInventory().selectedSlot = originalSlot;
+            if (mc.player.getInventory().getSelectedSlot() == findShieldInHotbar()) {
+                mc.player.getInventory().setSelectedSlot(originalSlot);
             }
             originalSlot = -1;
             isSwapping = false;
@@ -58,13 +58,13 @@ public final class SwordHotSwap extends Module {
     }
 
     private void startSwap() {
-        ItemStack mainHand = mc.player.getMainHandStack();
+        ItemStack mainHand = mc.player.getMainHandItem();
         if (!isSword(mainHand)) return;
 
         int shieldSlot = findShieldInHotbar();
         if (shieldSlot == -1) return;
 
-        originalSlot = mc.player.getInventory().selectedSlot;
+        originalSlot = mc.player.getInventory().getSelectedSlot();
         isSwapping = true;
         swapTimer.reset();
     }
@@ -72,13 +72,13 @@ public final class SwordHotSwap extends Module {
     private void performSwap() {
         int shieldSlot = findShieldInHotbar();
         if (shieldSlot != -1) {
-            mc.player.getInventory().selectedSlot = shieldSlot;
+            mc.player.getInventory().setSelectedSlot(shieldSlot);
         }
     }
 
     private int findShieldInHotbar() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (stack.getItem() == Items.SHIELD) {
                 return i;
             }
@@ -88,7 +88,7 @@ public final class SwordHotSwap extends Module {
 
     private boolean isSword(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        return stack.getItem() instanceof SwordItem;
+        return InventoryUtil.isSword(stack);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package cc.silk.utils.render;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import cc.silk.utils.render.CompatShaders;
 import org.joml.Matrix4f;
 
@@ -64,20 +64,20 @@ public final class GuiUtils {
         return (float) (Math.pow(2, -10 * t) * Math.sin((t - 0.1) * (2 * Math.PI) / 0.4) + 1);
     }
 
-    public static void drawGradientRect(DrawContext context, int x, int y, int width, int height,
+    public static void drawGradientRect(GuiGraphicsExtractor context, int x, int y, int width, int height,
                                         Color topLeft, Color bottomLeft) {
-        Matrix4f matrix = context.getMatrices().peek().getPositionMatrix();
+        // Matrix3x2fStack pose - matrix not needed
 
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        
+        
         CompatShaders.usePositionColor();
 
         context.fillGradient(x, y, x + width, y + height, topLeft.getRGB(), bottomLeft.getRGB());
 
-        RenderSystem.disableBlend();
+        
     }
 
-    public static void drawProgressBar(DrawContext context, int x, int y, int width, int height,
+    public static void drawProgressBar(GuiGraphicsExtractor context, int x, int y, int width, int height,
                                        float progress, Color backgroundColor, Color progressColor) {
         progress = Math.max(0, Math.min(1, progress));
 
@@ -92,7 +92,7 @@ public final class GuiUtils {
         RenderUtils.drawSmoothRoundedRect(context, x, y, width, 1, height / 2, highlight.getRGB());
     }
 
-    public static void drawButton(DrawContext context, int x, int y, int width, int height,
+    public static void drawButton(GuiGraphicsExtractor context, int x, int y, int width, int height,
                                   String text, boolean hovered, boolean pressed) {
         Color bgColor = pressed ? Colors.BACKGROUND_LIGHT :
                 hovered ? Colors.BACKGROUND_LIGHT : Colors.BACKGROUND_DARK;
@@ -100,12 +100,12 @@ public final class GuiUtils {
         RenderUtils.drawSmoothRoundedRect(context, x, y, width, height, 6, bgColor.getRGB());
 
         Color borderColor = hovered ? Colors.ACCENT_BLUE : Colors.BORDER_LIGHT;
-        drawBorder(context, x, y, width, height, 6, 1, borderColor);
+        outline(context, x, y, width, height, 6, 1, borderColor);
 
         drawCenteredText(context, text, x + width / 2, y + height / 2, Colors.TEXT_PRIMARY);
     }
 
-    public static void drawSlider(DrawContext context, int x, int y, int width, int height,
+    public static void drawSlider(GuiGraphicsExtractor context, int x, int y, int width, int height,
                                   float value, boolean dragging) {
         value = Math.max(0, Math.min(1, value));
 
@@ -126,20 +126,20 @@ public final class GuiUtils {
         RenderUtils.drawSmoothRoundedRect(context, handleX, y, height, height, height / 2, handleColor.getRGB());
     }
 
-    public static void drawCheckbox(DrawContext context, int x, int y, int size, boolean checked, boolean hovered) {
+    public static void drawCheckbox(GuiGraphicsExtractor context, int x, int y, int size, boolean checked, boolean hovered) {
         Color bgColor = checked ? Colors.ACCENT_PURPLE : Colors.BACKGROUND_DARK;
         Color borderColor = hovered ? Colors.ACCENT_PURPLE : Colors.BORDER_LIGHT;
 
         RenderUtils.drawSmoothRoundedRect(context, x, y, size, size, 3, bgColor.getRGB());
 
-        drawBorder(context, x, y, size, size, 3, 1, borderColor);
+        outline(context, x, y, size, size, 3, 1, borderColor);
 
         if (checked) {
             drawCheckmark(context, x + 2, y + 2, size - 4, Colors.TEXT_PRIMARY);
         }
     }
 
-    public static void drawToggle(DrawContext context, int x, int y, int width, int height,
+    public static void drawToggle(GuiGraphicsExtractor context, int x, int y, int width, int height,
                                   boolean enabled, boolean hovered) {
         Color bgColor = enabled ? Colors.ACCENT_PURPLE : Colors.BACKGROUND_DARK;
         Color borderColor = hovered ? Colors.ACCENT_PURPLE.brighter() :
@@ -147,7 +147,7 @@ public final class GuiUtils {
 
         RenderUtils.drawSmoothRoundedRect(context, x, y, width, height, height / 2, bgColor.getRGB());
 
-        drawBorder(context, x, y, width, height, height / 2, 1, borderColor);
+        outline(context, x, y, width, height, height / 2, 1, borderColor);
 
         int handleSize = height - 4;
         int handleX = enabled ? x + width - handleSize - 2 : x + 2;
@@ -155,7 +155,7 @@ public final class GuiUtils {
         RenderUtils.drawSmoothRoundedRect(context, handleX, y + 2, handleSize, handleSize, handleSize / 2, handleColor.getRGB());
     }
 
-    public static void drawDropdown(DrawContext context, int x, int y, int width, int height,
+    public static void drawDropdown(GuiGraphicsExtractor context, int x, int y, int width, int height,
                                     String selected, boolean expanded, boolean hovered) {
         Color bgColor = hovered ? Colors.BACKGROUND_LIGHT : Colors.BACKGROUND_DARK;
 
@@ -166,7 +166,7 @@ public final class GuiUtils {
         drawArrow(context, x + width - 16, y + height / 2 - 3, 6, expanded, Colors.TEXT_SECONDARY);
     }
 
-    public static void drawTooltip(DrawContext context, int x, int y, String text) {
+    public static void drawTooltip(GuiGraphicsExtractor context, int x, int y, String text) {
         int padding = 6;
         int textWidth = getTextWidth(text);
         int textHeight = getTextHeight();
@@ -184,7 +184,7 @@ public final class GuiUtils {
         drawText(context, text, x + padding, y + padding, Colors.TEXT_PRIMARY);
     }
 
-    public static void drawNotification(DrawContext context, int x, int y, int width, String title,
+    public static void drawNotification(GuiGraphicsExtractor context, int x, int y, int width, String title,
                                         String message, NotificationType type, float progress) {
         Color accentColor = getNotificationColor(type);
 
@@ -218,7 +218,7 @@ public final class GuiUtils {
         }
     }
 
-    public static void drawBorder(DrawContext context, int x, int y, int width, int height,
+    public static void outline(GuiGraphicsExtractor context, int x, int y, int width, int height,
                                   int radius, int thickness, Color color) {
         RenderUtils.drawSmoothRoundedRect(context, x, y, width, thickness, radius, color.getRGB());
         RenderUtils.drawSmoothRoundedRect(context, x, y + height - thickness, width, thickness, radius, color.getRGB());
@@ -226,18 +226,22 @@ public final class GuiUtils {
         RenderUtils.drawSmoothRoundedRect(context, x + width - thickness, y, thickness, height, radius, color.getRGB());
     }
 
-    public static void drawText(DrawContext context, String text, int x, int y, Color color) {
-        context.drawText(net.minecraft.client.MinecraftClient.getInstance().textRenderer,
+    public static void drawText(GuiGraphicsExtractor context, String text, int x, int y, Color color) {
+        context.text(net.minecraft.client.Minecraft.getInstance().font,
                 text, x, y, color.getRGB(), false);
     }
 
-    public static void drawCenteredText(DrawContext context, String text, int centerX, int centerY, Color color) {
+    public static void text(GuiGraphicsExtractor context, String text, int x, int y, Color color) {
+        drawText(context, text, x, y, color);
+    }
+
+    public static void drawCenteredText(GuiGraphicsExtractor context, String text, int centerX, int centerY, Color color) {
         int textWidth = getTextWidth(text);
         int textHeight = getTextHeight();
         drawText(context, text, centerX - textWidth / 2, centerY - textHeight / 2, color);
     }
 
-    public static void drawCheckmark(DrawContext context, int x, int y, int size, Color color) {
+    public static void drawCheckmark(GuiGraphicsExtractor context, int x, int y, int size, Color color) {
         int centerX = x + size / 2;
         int centerY = y + size / 2;
 
@@ -245,7 +249,7 @@ public final class GuiUtils {
         context.fill(centerX, centerY + 2, centerX + 4, centerY - 2, color.getRGB());
     }
 
-    public static void drawArrow(DrawContext context, int x, int y, int size, boolean down, Color color) {
+    public static void drawArrow(GuiGraphicsExtractor context, int x, int y, int size, boolean down, Color color) {
         int centerX = x + size / 2;
         int centerY = y + size / 2;
 
@@ -262,7 +266,7 @@ public final class GuiUtils {
         }
     }
 
-    public static void drawNotificationIcon(DrawContext context, int x, int y, NotificationType type) {
+    public static void drawNotificationIcon(GuiGraphicsExtractor context, int x, int y, NotificationType type) {
         Color iconColor = getNotificationColor(type);
 
         switch (type) {
@@ -284,11 +288,11 @@ public final class GuiUtils {
     }
 
     public static int getTextWidth(String text) {
-        return net.minecraft.client.MinecraftClient.getInstance().textRenderer.getWidth(text);
+        return net.minecraft.client.Minecraft.getInstance().font.width(text);
     }
 
     public static int getTextHeight() {
-        return net.minecraft.client.MinecraftClient.getInstance().textRenderer.fontHeight;
+        return net.minecraft.client.Minecraft.getInstance().font.lineHeight;
     }
 
     public static Color interpolateColor(Color color1, Color color2, float factor) {
@@ -365,7 +369,7 @@ public final class GuiUtils {
     }
 
     public static class Layout {
-        public static void drawGrid(DrawContext context, int x, int y, int width, int height,
+        public static void drawGrid(GuiGraphicsExtractor context, int x, int y, int width, int height,
                                     int cellWidth, int cellHeight, Color gridColor) {
             for (int i = 0; i <= width / cellWidth; i++) {
                 int lineX = x + i * cellWidth;
@@ -378,7 +382,7 @@ public final class GuiUtils {
             }
         }
 
-        public static void drawContainer(DrawContext context, int x, int y, int width, int height,
+        public static void drawContainer(GuiGraphicsExtractor context, int x, int y, int width, int height,
                                          String title, boolean collapsible, boolean collapsed) {
             Color bgColor = Colors.BACKGROUND_DARK;
             Color headerColor = Colors.BACKGROUND_LIGHT;
@@ -396,7 +400,7 @@ public final class GuiUtils {
                 RenderUtils.drawSmoothRoundedRect(context, x, y + headerHeight, width,
                         height - headerHeight, 6, bgColor.getRGB());
 
-                drawBorder(context, x, y, width, height, 6, 1, Colors.BORDER_LIGHT);
+                outline(context, x, y, width, height, 6, 1, Colors.BORDER_LIGHT);
 
             }
         }

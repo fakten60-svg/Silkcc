@@ -4,16 +4,15 @@ import cc.silk.event.impl.player.AttackEvent;
 import cc.silk.event.impl.player.DoAttackEvent;
 import cc.silk.module.Category;
 import cc.silk.module.Module;
+import cc.silk.utils.mc.InventoryUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.decoration.EndCrystalEntity;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.MiningToolItem;
-import net.minecraft.item.SwordItem;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 
 public final class CrystalOptimizer extends Module {
 
@@ -24,27 +23,26 @@ public final class CrystalOptimizer extends Module {
     @EventHandler
     private void onAttackEvent(DoAttackEvent event) {
         if (isNull()) return;
-        if (mc.crosshairTarget == null) return;
+        if (mc.hitResult == null) return;
 
-        if (mc.crosshairTarget.getType() != HitResult.Type.ENTITY) return;
-        if (!(mc.crosshairTarget instanceof EntityHitResult hit)) return;
+        if (mc.hitResult.getType() != HitResult.Type.ENTITY) return;
+        if (!(mc.hitResult instanceof EntityHitResult hit)) return;
 
         Entity target = hit.getEntity();
-        if (!(target instanceof EndCrystalEntity crystal)) return;
+        if (!(target instanceof EndCrystal crystal)) return;
 
-        StatusEffectInstance weakness = mc.player.getStatusEffect(StatusEffects.WEAKNESS);
-        StatusEffectInstance strength = mc.player.getStatusEffect(StatusEffects.STRENGTH);
-        ItemStack mainHand = mc.player.getMainHandStack();
+        MobEffectInstance weakness = mc.player.getEffect(MobEffects.WEAKNESS);
+        MobEffectInstance strength = mc.player.getEffect(MobEffects.STRENGTH);
+        ItemStack mainHand = mc.player.getMainHandItem();
 
         boolean canAttack =
                 (weakness == null)
                         || (strength != null && strength.getAmplifier() > weakness.getAmplifier())
-                        || (mainHand.getItem() instanceof MiningToolItem)
-                        || (mainHand.getItem() instanceof SwordItem);
+                        || (InventoryUtil.isMiningTool(mainHand))
+                        || (InventoryUtil.isSword(mainHand));
 
         if (!canAttack) return;
 
         crystal.setRemoved(Entity.RemovalReason.KILLED);
-        crystal.onRemoved();
     }
 }

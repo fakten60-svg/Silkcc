@@ -10,15 +10,15 @@ import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.keybinding.KeyUtils;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.PotionContentsComponent;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.inventory.ContainerInput;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Random;
@@ -56,7 +56,7 @@ public final class AutoRefill extends Module {
             return;
         }
         
-        if (mc.currentScreen != null && !(mc.currentScreen instanceof InventoryScreen)) return;
+        if (mc.screen != null && !(mc.screen instanceof InventoryScreen)) return;
         
         boolean keyPressed = KeyUtils.isKeyPressed(keybind.getKeyCode());
         if (keyPressed && !this.keyPressed) {
@@ -72,14 +72,14 @@ public final class AutoRefill extends Module {
     }
 
     private void handleHover() {
-        if (!(mc.currentScreen instanceof InventoryScreen inv)) return;
+        if (!(mc.screen instanceof InventoryScreen inv)) return;
         
         try {
             Slot slot = ((HandledScreenAccessor) inv).getFocusedSlot();
-            if (slot == null || slot.getIndex() < 9 || !isPotion(slot.getStack()) || !needsRefill()) return;
+            if (slot == null || slot.getContainerSlot() < 9 || !isPotion(slot.getItem()) || !needsRefill()) return;
             
             if (timer.hasElapsedTime(hoverDelay.getValueInt() + random.nextInt(10))) {
-                clickSlot(slot.getIndex());
+                clickSlot(slot.getContainerSlot());
             }
         } catch (Exception ignored) {}
     }
@@ -87,7 +87,7 @@ public final class AutoRefill extends Module {
     private void startRefill() {
         if (!hasPotions()) return;
         
-        wasInventoryOpen = mc.currentScreen instanceof InventoryScreen;
+        wasInventoryOpen = mc.screen instanceof InventoryScreen;
         if (!wasInventoryOpen) {
             assert mc.player != null;
             mc.setScreen(new InventoryScreen(mc.player));
@@ -97,7 +97,7 @@ public final class AutoRefill extends Module {
     }
     
     private void performRefill() {
-        if (!(mc.currentScreen instanceof InventoryScreen) || !needsRefill()) {
+        if (!(mc.screen instanceof InventoryScreen) || !needsRefill()) {
             finishRefill();
             return;
         }
@@ -120,7 +120,7 @@ public final class AutoRefill extends Module {
 
     private boolean needsRefill() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (stack.isEmpty() || (isPotion(stack) && stack.getCount() < minStack.getValueInt())) {
                 return true;
             }
@@ -131,7 +131,7 @@ public final class AutoRefill extends Module {
     private int findPotion() {
         java.util.List<Integer> potions = new java.util.ArrayList<>();
         for (int i = 9; i < 36; i++) {
-            if (isPotion(mc.player.getInventory().getStack(i))) potions.add(i);
+            if (isPotion(mc.player.getInventory().getItem(i))) potions.add(i);
         }
         return potions.isEmpty() ? -1 : potions.get(random.nextInt(potions.size()));
     }
@@ -149,14 +149,14 @@ public final class AutoRefill extends Module {
         
         if (!isPotionItem(stack.getItem())) return false;
         
-        PotionContentsComponent contents = stack.get(DataComponentTypes.POTION_CONTENTS);
+        PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
         if (contents == null || contents.potion().isEmpty()) return false;
         
         return contents.potion().get().value().getEffects().stream().anyMatch(effect -> 
-            (health.getValue() && effect.getEffectType().equals(StatusEffects.INSTANT_HEALTH)) ||
-            (regen.getValue() && effect.getEffectType().equals(StatusEffects.REGENERATION)) ||
-            (strength.getValue() && effect.getEffectType().equals(StatusEffects.STRENGTH)) ||
-            (speed.getValue() && effect.getEffectType().equals(StatusEffects.SPEED)));
+            (health.getValue() && effect.getEffect().equals(MobEffects.INSTANT_HEALTH)) ||
+            (regen.getValue() && effect.getEffect().equals(MobEffects.REGENERATION)) ||
+            (strength.getValue() && effect.getEffect().equals(MobEffects.STRENGTH)) ||
+            (speed.getValue() && effect.getEffect().equals(MobEffects.SPEED)));
     }
     
     private boolean isPotionItem(Item item) {
@@ -164,8 +164,8 @@ public final class AutoRefill extends Module {
     }
 
     private void clickSlot(int slot) {
-        mc.interactionManager.clickSlot(mc.player.currentScreenHandler.syncId, 
-            slot, 0, SlotActionType.QUICK_MOVE, mc.player);
+        mc.gameMode.handleContainerInput(mc.player.containerMenu.containerId, 
+            slot, 0, ContainerInput.QUICK_MOVE, mc.player);
         timer.reset();
     }
 
@@ -179,7 +179,7 @@ public final class AutoRefill extends Module {
 
     @Override
     public void onDisable() {
-        if (mc.currentScreen instanceof InventoryScreen && !wasInventoryOpen) {
+        if (mc.screen instanceof InventoryScreen && !wasInventoryOpen) {
             mc.setScreen(null);
         }
         active = false;

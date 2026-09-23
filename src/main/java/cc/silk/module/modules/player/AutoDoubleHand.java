@@ -7,8 +7,8 @@ import cc.silk.module.setting.BooleanSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.ItemUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
-import net.minecraft.item.Items;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.world.item.Items;
 
 public final class AutoDoubleHand extends Module {
     private static final BooleanSetting inventorySwitch = new BooleanSetting("Inventory Switch", true);
@@ -40,7 +40,7 @@ public final class AutoDoubleHand extends Module {
     private boolean shouldHoldTotem() {
         if (isNull()) return false;
 
-        if (inventorySwitch.getValue() && mc.currentScreen instanceof InventoryScreen) {
+        if (inventorySwitch.getValue() && mc.screen instanceof InventoryScreen) {
             return true;
         }
 
@@ -50,37 +50,37 @@ public final class AutoDoubleHand extends Module {
     private boolean shouldSwitchForHealth() {
         if (mc.player.getHealth() > healthThreshold.getValue()) return false;
         if (mc.player.isUsingItem()) return false;
-        return !ItemUtil.isFood(mc.player.getMainHandStack());
+        return !ItemUtil.isFood(mc.player.getMainHandItem());
     }
 
     private boolean isHoldingTotem() {
         if (isNull()) return false;
         
-        int currentSlot = mc.player.getInventory().selectedSlot;
+        int currentSlot = mc.player.getInventory().getSelectedSlot();
         if (originalSlot != -1 && currentSlot == (totemSlot.getValueInt() - 1)) {
             return true;
         }
         
-        return mc.player.getInventory().getStack(currentSlot).getItem() == Items.TOTEM_OF_UNDYING;
+        return mc.player.getInventory().getItem(currentSlot).getItem() == Items.TOTEM_OF_UNDYING;
     }
 
     private void switchToTotem() {
         if (isNull()) return;
 
         int totemSlotIndex = findTotemInHotbar();
-        if (totemSlotIndex == -1 && inventorySwitch.getValue() && mc.currentScreen instanceof InventoryScreen) {
+        if (totemSlotIndex == -1 && inventorySwitch.getValue() && mc.screen instanceof InventoryScreen) {
             totemSlotIndex = totemSlot.getValueInt() - 1;
         }
 
         if (totemSlotIndex != -1) {
-            originalSlot = mc.player.getInventory().selectedSlot;
-            mc.player.getInventory().selectedSlot = totemSlotIndex;
+            originalSlot = mc.player.getInventory().getSelectedSlot();
+            mc.player.getInventory().setSelectedSlot(totemSlotIndex);
         }
     }
 
     private void switchBack() {
         if (isNull()) return;
-        mc.player.getInventory().selectedSlot = originalSlot;
+        mc.player.getInventory().setSelectedSlot(originalSlot);
         originalSlot = -1;
     }
 
@@ -88,7 +88,7 @@ public final class AutoDoubleHand extends Module {
         if (isNull()) return -1;
 
         for (int i = 0; i < 9; i++) {
-            if (mc.player.getInventory().getStack(i).getItem() == Items.TOTEM_OF_UNDYING) {
+            if (mc.player.getInventory().getItem(i).getItem() == Items.TOTEM_OF_UNDYING) {
                 return i;
             }
         }
@@ -98,7 +98,7 @@ public final class AutoDoubleHand extends Module {
     @Override
     public void onDisable() {
         if (!isNull() && originalSlot != -1) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
             originalSlot = -1;
         }
         super.onDisable();

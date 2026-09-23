@@ -4,7 +4,7 @@ import cc.silk.event.types.CancellableEvent;
 import cc.silk.event.types.TransferOrder;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.network.packet.Packet;
+import net.minecraft.network.protocol.Packet;
 
 
 @Getter

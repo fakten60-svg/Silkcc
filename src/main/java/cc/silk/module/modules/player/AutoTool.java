@@ -7,10 +7,10 @@ import cc.silk.module.setting.BooleanSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.BlockState;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 
 public final class AutoTool extends Module {
     private static final NumberSetting delay = new NumberSetting("Delay", 0, 100, 5, 1);
@@ -31,17 +31,17 @@ public final class AutoTool extends Module {
     private void onTickEvent(TickEvent event) {
         if (isNull()) return;
 
-        if (onlyWhenSneaking.getValue() && !mc.player.isSneaking()) return;
+        if (onlyWhenSneaking.getValue() && !mc.player.isShiftKeyDown()) return;
 
-        if (!mc.options.attackKey.isPressed()) {
+        if (!mc.options.keyAttack.isDown()) {
             if (returnToPrevious.getValue() && previousSlot != -1) {
-                mc.player.getInventory().selectedSlot = previousSlot;
+                mc.player.getInventory().setSelectedSlot(previousSlot);
                 previousSlot = -1;
             }
             return;
         }
 
-        HitResult hit = mc.crosshairTarget;
+        HitResult hit = mc.hitResult;
         if (hit == null) return;
 
         if (hit.getType() == HitResult.Type.BLOCK) {
@@ -50,11 +50,11 @@ public final class AutoTool extends Module {
     }
 
     private void handleMining(BlockHitResult hit) {
-        BlockState state = mc.world.getBlockState(hit.getBlockPos());
-        if (state.getHardness(mc.world, hit.getBlockPos()) < 0) return;
+        BlockState state = mc.level.getBlockState(hit.getBlockPos());
+        if (state.getDestroySpeed(mc.level, hit.getBlockPos()) < 0) return;
 
         int bestSlot = findBestTool(state);
-        if (bestSlot != -1 && bestSlot != mc.player.getInventory().selectedSlot) {
+        if (bestSlot != -1 && bestSlot != mc.player.getInventory().getSelectedSlot()) {
             switchTool(bestSlot);
         }
     }
@@ -63,9 +63,9 @@ public final class AutoTool extends Module {
         if (!timer.hasElapsedTime(delay.getValueInt())) return;
 
         if (previousSlot == -1) {
-            previousSlot = mc.player.getInventory().selectedSlot;
+            previousSlot = mc.player.getInventory().getSelectedSlot();
         }
-        mc.player.getInventory().selectedSlot = slot;
+        mc.player.getInventory().setSelectedSlot(slot);
         timer.reset();
     }
 
@@ -74,7 +74,7 @@ public final class AutoTool extends Module {
         float bestScore = 0;
 
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (stack.isEmpty() || !isEffectiveTool(stack, state)) continue;
             if (preventLowDurability.getValue() && hasLowDurability(stack)) continue;
 
@@ -89,11 +89,11 @@ public final class AutoTool extends Module {
     }
 
     private boolean isEffectiveTool(ItemStack tool, BlockState state) {
-        return tool.isSuitableFor(state) || tool.getMiningSpeedMultiplier(state) > 1.0f;
+        return  tool.getDestroySpeed(state) > 1.0f;
     }
 
     private float calculateToolScore(ItemStack tool, BlockState state) {
-        float baseScore = tool.getMiningSpeedMultiplier(state);
+        float baseScore = tool.getDestroySpeed(state);
         float materialBonus = getMaterialBonus(tool);
         return baseScore * materialBonus;
     }
@@ -111,7 +111,7 @@ public final class AutoTool extends Module {
 
     private boolean hasLowDurability(ItemStack stack) {
         if (stack.getMaxDamage() <= 0) return false;
-        int remaining = stack.getMaxDamage() - stack.getDamage();
+        int remaining = stack.getMaxDamage() - stack.getDamageValue();
         return remaining <= durabilityThreshold.getValueInt();
     }
 
@@ -125,7 +125,7 @@ public final class AutoTool extends Module {
     @Override
     public void onDisable() {
         if (returnToPrevious.getValue() && previousSlot != -1) {
-            mc.player.getInventory().selectedSlot = previousSlot;
+            mc.player.getInventory().setSelectedSlot(previousSlot);
         }
         previousSlot = -1;
         super.onDisable();

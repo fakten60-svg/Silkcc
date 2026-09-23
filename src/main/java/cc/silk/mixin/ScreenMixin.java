@@ -3,9 +3,9 @@ package cc.silk.mixin;
 import cc.silk.gui.ClickGui;
 import cc.silk.gui.newgui.NewClickGUI;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -18,36 +18,36 @@ public abstract class ScreenMixin {
 
     @Shadow
     @Nullable
-    protected MinecraftClient client;
+    protected Minecraft client;
 
     @Inject(method = "renderBackground", at = @At("HEAD"), cancellable = true)
-    private void renderBackgroundInject(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+    private void renderBackgroundInject(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (client == null) return;
-        Screen currentScreen = client.currentScreen;
-        if (currentScreen instanceof ClickGui) {
+        Screen screen = client.screen;
+        if (screen instanceof ClickGui) {
             ci.cancel();
             return;
         }
-        if (currentScreen instanceof NewClickGUI && !cc.silk.module.modules.client.ClientSettingsModule.isGuiBlurEnabled()) {
+        if (screen instanceof NewClickGUI && !cc.silk.module.modules.client.ClientSettingsModule.isGuiBlurEnabled()) {
             ci.cancel();
         }
     }
 
     @Inject(method = "render", at = @At("TAIL"))
-    private void onRenderTail(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+    private void onRenderTail(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (client == null) return;
-        Screen currentScreen = client.currentScreen;
-        if (currentScreen instanceof NewClickGUI || currentScreen instanceof ClickGui) {
-            RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
-            RenderSystem.enableDepthTest();
-            RenderSystem.depthFunc(515);
-            RenderSystem.enableCull();
-            RenderSystem.disableScissor();
-            RenderSystem.resetTextureMatrix();
-            RenderSystem.colorMask(true, true, true, true);
-            RenderSystem.depthMask(true);
+        Screen screen = client.screen;
+        if (screen instanceof NewClickGUI || screen instanceof ClickGui) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
         }
     }
 }

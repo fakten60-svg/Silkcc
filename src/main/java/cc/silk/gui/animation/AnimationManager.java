@@ -2,7 +2,7 @@ package cc.silk.gui.animation;
 
 import cc.silk.module.Category;
 import cc.silk.module.Module;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.Mth;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,30 +35,30 @@ public class AnimationManager {
     public void updateCategoryAnimation(Category category, boolean isSelected, boolean isHovered, float delta) {
         float targetAnimation = isSelected ? 1f : (isHovered ? 0.3f : 0f);
         float currentAnimation = categoryAnimations.get(category);
-        float newAnimation = MathHelper.lerp(0.15f, currentAnimation, targetAnimation);
+        float newAnimation = Mth.lerp(0.15f, currentAnimation, targetAnimation);
         categoryAnimations.put(category, newAnimation);
     }
 
     public void updateModuleAnimation(Module module, boolean isEnabled, boolean isHovered, float delta) {
         float targetAnimation = isEnabled ? 1f : (isHovered ? 0.2f : 0f);
         float currentAnimation = moduleAnimations.getOrDefault(module, 0f);
-        float newAnimation = MathHelper.lerp(0.12f, currentAnimation, targetAnimation);
+        float newAnimation = Mth.lerp(0.12f, currentAnimation, targetAnimation);
         moduleAnimations.put(module, newAnimation);
     }
 
     public void updateDropdownAnimation(Module module, boolean isExpanded, float delta) {
         float targetDropdown = isExpanded ? 1f : 0f;
         float currentDropdown = dropdownAnimations.getOrDefault(module, 0f);
-        float newDropdown = MathHelper.lerp(0.15f, currentDropdown, targetDropdown);
+        float newDropdown = Mth.lerp(0.15f, currentDropdown, targetDropdown);
         dropdownAnimations.put(module, newDropdown);
     }
 
     public void updateSidebarAnimation(float target, float delta) {
-        sidebarAnimation = MathHelper.lerp(0.1f, sidebarAnimation, target);
+        sidebarAnimation = Mth.lerp(0.1f, sidebarAnimation, target);
     }
 
     public void updateContentAnimation(float target, float delta) {
-        contentAnimation = MathHelper.lerp(0.1f, contentAnimation, target);
+        contentAnimation = Mth.lerp(0.1f, contentAnimation, target);
     }
 
     public float getCategoryAnimation(Category category) {
@@ -132,8 +132,8 @@ public class AnimationManager {
 
             float closingSpeed = 8.0f;
 
-            guiAnimation = MathHelper.lerp(1.0f - (float) Math.exp(-closingSpeed * deltaTime), guiAnimation, targetGui);
-            scaleAnimation = MathHelper.lerp(1.0f - (float) Math.exp(-closingSpeed * deltaTime), scaleAnimation, targetScale);
+            guiAnimation = Mth.lerp(1.0f - (float) Math.exp(-closingSpeed * deltaTime), guiAnimation, targetGui);
+            scaleAnimation = Mth.lerp(1.0f - (float) Math.exp(-closingSpeed * deltaTime), scaleAnimation, targetScale);
 
 
             if (guiAnimation <= 0.05f && !animationComplete) {
@@ -145,14 +145,14 @@ public class AnimationManager {
 
             float openingSpeed = 6.0f;
 
-            guiAnimation = MathHelper.lerp(1.0f - (float) Math.exp(-openingSpeed * deltaTime), guiAnimation, targetGui);
+            guiAnimation = Mth.lerp(1.0f - (float) Math.exp(-openingSpeed * deltaTime), guiAnimation, targetGui);
 
 
             float scaleProgress = Math.min(timeSinceOpen * 2f, 1f);
             float easeOutBack = 1f + 2.7f * (float) Math.pow(scaleProgress - 1f, 3f) + 1.7f * (float) Math.pow(scaleProgress - 1f, 2f);
-            scaleAnimation = MathHelper.lerp(1.0f - (float) Math.exp(-openingSpeed * deltaTime), scaleAnimation, easeOutBack);
-            categorySwitch = MathHelper.lerp(0.12f, categorySwitch, 1f);
-            contentAnimation = MathHelper.lerp(0.12f, contentAnimation, 1f);
+            scaleAnimation = Mth.lerp(1.0f - (float) Math.exp(-openingSpeed * deltaTime), scaleAnimation, easeOutBack);
+            categorySwitch = Mth.lerp(0.12f, categorySwitch, 1f);
+            contentAnimation = Mth.lerp(0.12f, contentAnimation, 1f);
         }
     }
 

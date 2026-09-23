@@ -10,13 +10,13 @@ import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.keybinding.KeyUtils;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.PotionContentsComponent;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.potion.Potion;
-import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.core.Holder;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -75,10 +75,10 @@ public final class ThrowPot extends Module {
         findPotionSlots();
         if (potionSlots.isEmpty()) return;
 
-        if (originalSlot == -1) originalSlot = mc.player.getInventory().selectedSlot;
+        if (originalSlot == -1) originalSlot = mc.player.getInventory().getSelectedSlot();
         if (lookDown.getValue()) {
-            originalPitch = mc.player.getPitch();
-            mc.player.setPitch(89.9f);
+            originalPitch = mc.player.getXRot();
+            mc.player.setXRot(89.9f);
         }
 
         potsToThrow = multiThrow.getValue() ? Math.min(3, potionSlots.size()) : 1;
@@ -89,7 +89,7 @@ public final class ThrowPot extends Module {
 
     private void throwNextPotion() {
         int slot = potionSlots.get(potsThrown % potionSlots.size());
-        mc.player.getInventory().selectedSlot = slot;
+        mc.player.getInventory().setSelectedSlot(slot);
         ((MinecraftClientAccessor) mc).invokeDoItemUse();
         potsThrown++;
         potTimer.reset();
@@ -97,10 +97,10 @@ public final class ThrowPot extends Module {
 
     private void finishThrow() {
         if (autoSwitch.getValue() && originalSlot != -1) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
         }
         if (lookDown.getValue()) {
-            mc.player.setPitch(originalPitch);
+            mc.player.setXRot(originalPitch);
         }
         isThrowing = false;
         potsToThrow = 0;
@@ -110,7 +110,7 @@ public final class ThrowPot extends Module {
     private void findPotionSlots() {
         potionSlots.clear();
         for (int i = 0; i < 9; i++) {
-            if (isHealthPotion(mc.player.getInventory().getStack(i))) {
+            if (isHealthPotion(mc.player.getInventory().getItem(i))) {
                 potionSlots.add(i);
             }
         }
@@ -118,17 +118,17 @@ public final class ThrowPot extends Module {
 
     private boolean isHealthPotion(ItemStack stack) {
         if (stack.getItem() != Items.SPLASH_POTION) return false;
-        PotionContentsComponent potionContents = stack.get(DataComponentTypes.POTION_CONTENTS);
+        PotionContents potionContents = stack.get(DataComponents.POTION_CONTENTS);
         if (potionContents == null) return false;
 
         if (potionContents.potion().isPresent()) {
-            RegistryEntry<Potion> potionEntry = potionContents.potion().get();
+            Holder<Potion> potionEntry = potionContents.potion().get();
             return potionEntry.value().getEffects().stream()
-                    .anyMatch(effect -> effect.getEffectType().equals(StatusEffects.INSTANT_HEALTH));
+                    .anyMatch(effect -> effect.getEffect().equals(MobEffects.INSTANT_HEALTH));
         }
 
         return potionContents.customEffects().stream()
-                .anyMatch(effect -> effect.getEffectType().equals(StatusEffects.INSTANT_HEALTH));
+                .anyMatch(effect -> effect.getEffect().equals(MobEffects.INSTANT_HEALTH));
     }
 
     @Override
@@ -148,10 +148,10 @@ public final class ThrowPot extends Module {
     @Override
     public void onDisable() {
         if (autoSwitch.getValue() && originalSlot != -1) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
         }
         if (lookDown.getValue()) {
-            mc.player.setPitch(originalPitch);
+            mc.player.setXRot(originalPitch);
         }
         potionSlots.clear();
         originalSlot = -1;

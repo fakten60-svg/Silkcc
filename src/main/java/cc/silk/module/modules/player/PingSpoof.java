@@ -6,8 +6,8 @@ import cc.silk.module.Category;
 import cc.silk.module.Module;
 import cc.silk.module.setting.NumberSetting;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.network.packet.c2s.common.KeepAliveC2SPacket;
-import net.minecraft.network.packet.s2c.common.KeepAliveS2CPacket;
+import net.minecraft.network.protocol.common.ServerboundKeepAlivePacket;
+import net.minecraft.network.protocol.common.ClientboundKeepAlivePacket;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -22,12 +22,12 @@ public final class PingSpoof extends Module {
 
     @EventHandler
     private void onEventPacket(PacketEvent event) {
-        if (event.getPacket() instanceof KeepAliveS2CPacket packet) {
+        if (event.getPacket() instanceof ClientboundKeepAlivePacket packet) {
             if (isNull()) return;
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                 try {
                     Thread.sleep(msDelay.getValueInt());
-                    Objects.requireNonNull(mc.getNetworkHandler()).getConnection().send(new KeepAliveC2SPacket(packet.getId()));
+                    Objects.requireNonNull(mc.getConnection()).getConnection().send(new ServerboundKeepAlivePacket(packet.getId()));
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }

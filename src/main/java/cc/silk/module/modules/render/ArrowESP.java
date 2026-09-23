@@ -9,19 +9,19 @@ import cc.silk.module.setting.ColorSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.render.TextureRenderer;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import cc.silk.utils.render.CompatShaders;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.RotationAxis;
-import net.minecraft.util.math.Vec3d;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
+import com.mojang.math.Axis;
+import net.minecraft.world.phys.Vec3;
 
 import java.awt.*;
 
 public final class ArrowESP extends Module {
-    private static final Identifier ARROW_TEXTURE = Identifier.of("silk", "imgs/triangle.png");
+    private static final Identifier ARROW_TEXTURE = Identifier.fromNamespaceAndPath("silk", "imgs/triangle.png");
     private final BooleanSetting showSelf = new BooleanSetting("Show Self", false);
     private final NumberSetting range = new NumberSetting("Range", 10.0D, 200.0D, 120.0D, 5.0D);
     private final NumberSetting size = new NumberSetting("Size", 8.0D, 64.0D, 24.0D, 1.0D);
@@ -37,23 +37,22 @@ public final class ArrowESP extends Module {
     private void onRender2D(Render2DEvent event) {
         if (isNull()) return;
 
-        DrawContext context = event.getContext();
-        MatrixStack matrices = context.getMatrices();
+        GuiGraphicsExtractor context = event.getContext();
+        PoseStack matrices = new PoseStack();
         int width = event.getWidth();
         int height = event.getHeight();
         float centerX = width * 0.5f;
         float centerY = height * 0.5f;
 
-        float tickDelta = mc.getRenderTickCounter().getTickDelta(true);
-        Vec3d cameraPos = mc.gameRenderer.getCamera().getPos();
-        float cameraYaw = mc.gameRenderer.getCamera().getYaw();
+        float tickDelta = mc.getDeltaTracker().getGameTimeDeltaPartialTick(true);
+        Vec3 cameraPos = mc.gameRenderer.getMainCamera().position();
+        float cameraYaw = mc.gameRenderer.getMainCamera().yRot();
 
-        RenderSystem.disableDepthTest();
-        RenderSystem.depthMask(false);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        
+        
+        
+        
         CompatShaders.usePositionTexColor();
-        RenderSystem.setShaderTexture(0, ARROW_TEXTURE);
 
         Color arrowColor = color.getValue();
         int baseR = arrowColor.getRed();
@@ -64,13 +63,13 @@ public final class ArrowESP extends Module {
         float offsetValue = offset.getValueFloat();
         double maxRange = range.getValue();
 
-        for (PlayerEntity player : mc.world.getPlayers()) {
+        for (Player player : mc.level.players()) {
             if (!shouldRender(player)) continue;
-            double distanceSq = mc.player.squaredDistanceTo(player);
+            double distanceSq = mc.player.distanceToSqr(player);
             if (distanceSq > maxRange * maxRange) continue;
 
-            double interpolatedX = player.prevX + (player.getX() - player.prevX) * tickDelta;
-            double interpolatedZ = player.prevZ + (player.getZ() - player.prevZ) * tickDelta;
+            double interpolatedX = player.xo + (player.getX() - player.xo) * tickDelta;
+            double interpolatedZ = player.zo + (player.getZ() - player.zo) * tickDelta;
 
             double dx = interpolatedX - cameraPos.x;
             double dz = interpolatedZ - cameraPos.z;
@@ -78,30 +77,30 @@ public final class ArrowESP extends Module {
             double planar = Math.sqrt(dx * dx + dz * dz);
             if (planar < 1.0E-6) continue;
 
-            float yawToPlayer = (float) MathHelper.wrapDegrees(Math.toDegrees(Math.atan2(dz, dx)) - 90.0F - cameraYaw);
+            float yawToPlayer = (float) Mth.wrapDegrees(Math.toDegrees(Math.atan2(dz, dx)) - 90.0F - cameraYaw);
 
             double distance = Math.sqrt(distanceSq);
             float distanceFactor = (float) Math.min(distance / maxRange, 1.0D);
             float alphaScale = 1.0f - distanceFactor * 0.6f;
             int arrowAlpha = Math.max(24, Math.min(255, (int) (baseA * alphaScale)));
 
-            matrices.push();
+            matrices.pushPose();
             matrices.translate(centerX, centerY, 0.0);
-            matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(yawToPlayer));
+            matrices.mulPose(Axis.ZP.rotationDegrees(yawToPlayer));
             matrices.translate(0.0, -(offsetValue + distanceFactor * offsetValue), 0.0);
 
             int baseColorPacked = (baseA << 24) | (baseR << 16) | (baseG << 8) | baseB;
             int packed = (arrowAlpha << 24) | (baseColorPacked & 0x00FFFFFF);
             TextureRenderer.drawCenteredQuad(matrices, ARROW_TEXTURE, sizeValue, sizeValue, packed);
-            matrices.pop();
+            matrices.popPose();
         }
 
-        RenderSystem.disableBlend();
-        RenderSystem.depthMask(true);
-        RenderSystem.enableDepthTest();
+        
+        
+        
     }
 
-    private boolean shouldRender(PlayerEntity player) {
+    private boolean shouldRender(Player player) {
         if (player == mc.player && !showSelf.getValue()) return false;
         return !player.isSpectator();
     }

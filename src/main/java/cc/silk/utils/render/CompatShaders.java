@@ -1,54 +1,20 @@
 package cc.silk.utils.render;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-
+/**
+ * Minecraft 26.1.2 removed {@code RenderSystem.setShader(...)} and the global shader state entirely:
+ * geometry is now drawn through a {@link net.minecraft.client.renderer.rendertype.RenderType}, which
+ * carries its own {@link com.mojang.blaze3d.pipeline.RenderPipeline}. Selecting a "current shader" has
+ * therefore become a no-op, and this class is kept only so call sites stay readable.
+ */
 public final class CompatShaders {
-    private CompatShaders() {}
+    private CompatShaders() {
+    }
 
     public static void usePositionColor() {
-        // Try RenderSystem.setShader(ShaderProgramKey) with ShaderProgramKeys.POSITION_COLOR
-        try {
-            Class<?> keysClass = Class.forName("net.minecraft.client.render.ShaderProgramKeys");
-            Object key = keysClass.getField("POSITION_COLOR").get(null);
-            Class<?> keyClass = Class.forName("net.minecraft.client.render.ShaderProgramKey");
-            RenderSystem.class.getMethod("setShader", keyClass).invoke(null, key);
-            return;
-        } catch (Throwable ignored) {
-        }
-
-        // Fallback: RenderSystem.setShader(ShaderProgram) using GameRenderer getter via reflection
-        try {
-            Class<?> gameRenderer = Class.forName("net.minecraft.client.render.GameRenderer");
-            Object program = gameRenderer.getMethod("getPositionColorProgram").invoke(null);
-            Class<?> programClass = Class.forName("net.minecraft.client.gl.ShaderProgram");
-            RenderSystem.class.getMethod("setShader", programClass).invoke(null, program);
-        } catch (Throwable ignored) {
-            // As a last resort, no-op
-        }
+        // No-op: the render type passed to BufferUtils.draw(...) selects the pipeline.
     }
 
     public static void usePositionTexColor() {
-        // Try RenderSystem.setShader(ShaderProgramKey) with ShaderProgramKeys.POSITION_TEX_COLOR
-        try {
-            Class<?> keysClass = Class.forName("net.minecraft.client.render.ShaderProgramKeys");
-            Object key = keysClass.getField("POSITION_TEX_COLOR").get(null);
-            Class<?> keyClass = Class.forName("net.minecraft.client.render.ShaderProgramKey");
-            RenderSystem.class.getMethod("setShader", keyClass).invoke(null, key);
-            return;
-        } catch (Throwable ignored) {
-        }
-
-        // Fallback: RenderSystem.setShader(ShaderProgram) using GameRenderer getter via reflection
-        try {
-            Class<?> gameRenderer = Class.forName("net.minecraft.client.render.GameRenderer");
-            Object program = gameRenderer.getMethod("getPositionTexColorProgram").invoke(null);
-            Class<?> programClass = Class.forName("net.minecraft.client.gl.ShaderProgram");
-            RenderSystem.class.getMethod("setShader", programClass).invoke(null, program);
-        } catch (Throwable ignored) {
-            // As a last resort, no-op
-        }
+        // No-op: the render type passed to BufferUtils.draw(...) selects the pipeline.
     }
 }
-
-
-

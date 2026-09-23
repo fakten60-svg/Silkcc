@@ -10,11 +10,11 @@ import cc.silk.module.setting.KeybindSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.keybinding.KeyUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.BowItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
 import org.lwjgl.glfw.GLFW;
 
 public final class CartKey extends Module {
@@ -38,14 +38,14 @@ public final class CartKey extends Module {
 
     @EventHandler
     private void onTickEvent(TickEvent event) {
-        if (isNull() || mc.currentScreen != null) return;
+        if (isNull() || mc.screen != null) return;
 
         boolean keyDown = KeyUtils.isKeyPressed(key.getKeyCode());
-        boolean rightClick = mc.options.useKey.isPressed();
+        boolean rightClick = mc.options.keyUse.isDown();
         long now = System.currentTimeMillis();
 
         if (keyDown && !pressed && state == State.IDLE && canPlace()) {
-            originalSlot = mc.player.getInventory().selectedSlot;
+            originalSlot = mc.player.getInventory().getSelectedSlot();
             state = State.RAIL;
             lastAction = now;
         }
@@ -74,11 +74,11 @@ public final class CartKey extends Module {
     }
 
     private boolean canPlace() {
-        if (!(mc.crosshairTarget instanceof BlockHitResult hit)) return false;
-        BlockPos pos = hit.getBlockPos().offset(hit.getSide());
-        return mc.world != null && mc.player != null &&
-                mc.player.getPos().distanceTo(pos.toCenterPos()) <= 4.5 &&
-                mc.world.getBlockState(pos).isAir() &&
+        if (!(mc.hitResult instanceof BlockHitResult hit)) return false;
+        BlockPos pos = hit.getBlockPos().relative(hit.getDirection());
+        return mc.level != null && mc.player != null &&
+                mc.player.position().distanceTo(pos.getCenter()) <= 4.5 &&
+                mc.level.getBlockState(pos).isAir() &&
                 hasItem(Items.RAIL) && hasItem(Items.TNT_MINECART);
     }
 
@@ -102,14 +102,14 @@ public final class CartKey extends Module {
     }
 
     private void switchSlot() {
-        if (originalSlot != -1) mc.player.getInventory().selectedSlot = originalSlot;
+        if (originalSlot != -1) mc.player.getInventory().setSelectedSlot(originalSlot);
         reset();
     }
 
     private void activateBow() {
         int bowSlot = findBow();
         if (bowSlot != -1) {
-            mc.player.getInventory().selectedSlot = bowSlot;
+            mc.player.getInventory().setSelectedSlot(bowSlot);
             state = State.BOW_CHARGE;
             charging = true;
         } else reset();
@@ -125,36 +125,36 @@ public final class CartKey extends Module {
                     Thread.sleep(100);
                 } catch (InterruptedException ignored) {
                 }
-                if (mc.player != null) mc.player.getInventory().selectedSlot = slotToRestore;
+                if (mc.player != null) mc.player.getInventory().setSelectedSlot(slotToRestore);
             }).start();
         } else {
             reset();
         }
     }
 
-    private boolean hasItem(net.minecraft.item.Item item) {
+    private boolean hasItem(net.minecraft.world.item.Item item) {
         return findItem(item) != -1;
     }
 
-    private boolean useItem(net.minecraft.item.Item item) {
+    private boolean useItem(net.minecraft.world.item.Item item) {
         int slot = findItem(item);
         if (slot == -1) return false;
 
         if (silent.getValue()) {
-            int current = mc.player.getInventory().selectedSlot;
-            mc.player.getInventory().selectedSlot = slot;
+            int current = mc.player.getInventory().getSelectedSlot();
+            mc.player.getInventory().setSelectedSlot(slot);
             ((MinecraftClientAccessor) mc).invokeDoItemUse();
-            mc.player.getInventory().selectedSlot = current;
+            mc.player.getInventory().setSelectedSlot(current);
         } else {
-            mc.player.getInventory().selectedSlot = slot;
+            mc.player.getInventory().setSelectedSlot(slot);
             ((MinecraftClientAccessor) mc).invokeDoItemUse();
         }
         return true;
     }
 
-    private int findItem(net.minecraft.item.Item item) {
+    private int findItem(net.minecraft.world.item.Item item) {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (!stack.isEmpty() && stack.getItem() == item) return i;
         }
         return -1;
@@ -162,7 +162,7 @@ public final class CartKey extends Module {
 
     private int findBow() {
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (!stack.isEmpty() && stack.getItem() instanceof BowItem) return i;
         }
         return -1;

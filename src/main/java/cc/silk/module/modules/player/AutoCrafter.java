@@ -8,11 +8,11 @@ import cc.silk.module.setting.BooleanSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.gui.screen.ingame.CraftingScreen;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.client.gui.screens.inventory.CraftingScreen;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.inventory.ContainerInput;
 
 import java.util.Arrays;
 import java.util.List;
@@ -131,7 +131,7 @@ public final class AutoCrafter extends Module {
     }
 
     private boolean isValidState() {
-        return mc.player != null && mc.world != null && mc.currentScreen instanceof CraftingScreen;
+        return mc.player != null && mc.level != null && mc.screen instanceof CraftingScreen;
     }
 
     private boolean hasAnythingEnabled() {
@@ -217,18 +217,18 @@ public final class AutoCrafter extends Module {
     private void placeItemInSlot(Item item, int craftingSlot) {
         int sourceSlot = findLargestStack(item);
         if (sourceSlot != -1) {
-            mc.interactionManager.clickSlot(
-                    mc.player.currentScreenHandler.syncId,
+            mc.gameMode.handleContainerInput(
+                    mc.player.containerMenu.containerId,
                     sourceSlot,
                     1,
-                    SlotActionType.PICKUP,
+                    ContainerInput.PICKUP,
                     mc.player
             );
-            mc.interactionManager.clickSlot(
-                    mc.player.currentScreenHandler.syncId,
+            mc.gameMode.handleContainerInput(
+                    mc.player.containerMenu.containerId,
                     craftingSlot,
                     1,
-                    SlotActionType.PICKUP,
+                    ContainerInput.PICKUP,
                     mc.player
             );
         }
@@ -236,13 +236,13 @@ public final class AutoCrafter extends Module {
 
     private void clearCraftingGrid() {
         for (int i = 1; i <= 9; i++) {
-            ItemStack stack = mc.player.currentScreenHandler.getSlot(i).getStack();
+            ItemStack stack = mc.player.containerMenu.getSlot(i).getItem();
             if (!stack.isEmpty()) {
-                mc.interactionManager.clickSlot(
-                        mc.player.currentScreenHandler.syncId,
+                mc.gameMode.handleContainerInput(
+                        mc.player.containerMenu.containerId,
                         i,
                         0,
-                        SlotActionType.QUICK_MOVE,
+                        ContainerInput.QUICK_MOVE,
                         mc.player
                 );
             }
@@ -250,13 +250,13 @@ public final class AutoCrafter extends Module {
     }
 
     private void collectResult() {
-        ItemStack result = mc.player.currentScreenHandler.getSlot(0).getStack();
+        ItemStack result = mc.player.containerMenu.getSlot(0).getItem();
         if (!result.isEmpty()) {
-            mc.interactionManager.clickSlot(
-                    mc.player.currentScreenHandler.syncId,
+            mc.gameMode.handleContainerInput(
+                    mc.player.containerMenu.containerId,
                     0,
                     0,
-                    SlotActionType.QUICK_MOVE,
+                    ContainerInput.QUICK_MOVE,
                     mc.player
             );
         }
@@ -270,8 +270,8 @@ public final class AutoCrafter extends Module {
         int bestSlot = -1;
         int largestStack = 0;
 
-        for (int i = 1; i < mc.player.currentScreenHandler.slots.size(); i++) {
-            ItemStack stack = mc.player.currentScreenHandler.getSlot(i).getStack();
+        for (int i = 1; i < mc.player.containerMenu.slots.size(); i++) {
+            ItemStack stack = mc.player.containerMenu.getSlot(i).getItem();
             if (!stack.isEmpty() && stack.getItem() == item && stack.getCount() > largestStack) {
                 largestStack = stack.getCount();
                 bestSlot = i;
@@ -282,8 +282,8 @@ public final class AutoCrafter extends Module {
 
     private int getItemCount(Item item) {
         int count = 0;
-        for (int i = 0; i < mc.player.getInventory().size(); i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
+        for (int i = 0; i < mc.player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = mc.player.getInventory().getItem(i);
             if (!stack.isEmpty() && stack.getItem() == item) {
                 count += stack.getCount();
             }

@@ -4,7 +4,7 @@ import cc.silk.module.Module;
 import cc.silk.module.setting.*;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
 import cc.silk.utils.render.GuiGlowHelper;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.awt.*;
 
@@ -981,7 +981,7 @@ public class SettingsPanel {
         }
     }
 
-    public void renderGlow(DrawContext context, float alpha) {
+    public void renderGlow(GuiGraphicsExtractor context, float alpha) {
         if (animationProgress <= 0f) {
             return;
         }

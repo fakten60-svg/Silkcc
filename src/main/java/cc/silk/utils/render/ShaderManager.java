@@ -1,8 +1,8 @@
 package cc.silk.utils.render;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.resource.Resource;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.opengl.GL20;
 
 import java.io.IOException;
@@ -48,8 +48,8 @@ public class ShaderManager {
 
     private static int loadShader(String path, int type) {
         try {
-            Identifier identifier = Identifier.of("silk", path);
-            Resource resource = MinecraftClient.getInstance().getResourceManager().getResource(identifier).orElse(null);
+            Identifier identifier = Identifier.fromNamespaceAndPath("silk", path);
+            Resource resource = Minecraft.getInstance().getResourceManager().getResource(identifier).orElse(null);
 
             if (resource == null) {
                 System.err.println("Could not find shader: " + path);
@@ -57,7 +57,7 @@ public class ShaderManager {
             }
 
             String source;
-            try (InputStream inputStream = resource.getInputStream()) {
+            try (InputStream inputStream = resource.open()) {
                 source = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
             }
 

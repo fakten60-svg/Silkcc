@@ -234,8 +234,8 @@ public class GuiEventHandler {
                 if (valueText.endsWith(".0")) {
                     valueText = valueText.substring(0, valueText.length() - 2);
                 }
-                int valueTextWidth = net.minecraft.client.MinecraftClient.getInstance().textRenderer
-                        .getWidth(valueText);
+                int valueTextWidth = net.minecraft.client.Minecraft.getInstance().font
+                        .width(valueText);
 
                 if (mouseX >= valueTextX && mouseX <= valueTextX + valueTextWidth &&
                         mouseY >= controlY && mouseY <= controlY + SETTING_HEIGHT) {

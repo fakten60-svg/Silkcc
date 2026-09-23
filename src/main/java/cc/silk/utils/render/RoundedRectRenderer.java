@@ -1,8 +1,8 @@
 package cc.silk.utils.render;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.vertex.PoseStack;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -52,23 +52,23 @@ public class RoundedRectRenderer {
         initialized = true;
     }
 
-    public static void drawRoundedRect(MatrixStack matrices, float x, float y, float width, float height, float radius, Color color) {
+    public static void drawRoundedRect(PoseStack matrices, float x, float y, float width, float height, float radius, Color color) {
         drawRoundedRect(matrices, x, y, width, height, radius, color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, color.getAlpha() / 255f);
     }
 
-    public static void drawRoundedRect(MatrixStack matrices, float x, float y, float width, float height, float radius, float r, float g, float b, float a) {
+    public static void drawRoundedRect(PoseStack matrices, float x, float y, float width, float height, float radius, float r, float g, float b, float a) {
         if (!initialized) {
             init();
         }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        int screenWidth = mc.getWindow().getScaledWidth();
-        int screenHeight = mc.getWindow().getScaledHeight();
+        Minecraft mc = Minecraft.getInstance();
+        int screenWidth = mc.getWindow().getGuiScaledWidth();
+        int screenHeight = mc.getWindow().getGuiScaledHeight();
 
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
-        RenderSystem.disableCull();
+        
+        
+        
+        
 
         ShaderManager.useShader(SHADER_NAME);
 
@@ -84,9 +84,9 @@ public class RoundedRectRenderer {
 
         ShaderManager.stopUsingShader();
 
-        RenderSystem.enableDepthTest();
-        RenderSystem.enableCull();
-        RenderSystem.disableBlend();
+        
+        
+        
     }
 
     public static void cleanup() {

@@ -7,7 +7,7 @@ import cc.silk.module.setting.Setting;
 import cc.silk.utils.notification.NotificationManager;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,7 +17,7 @@ import java.util.List;
 @Getter
 public abstract class Module implements IMinecraft {
 
-    protected static final MinecraftClient mc = MinecraftClient.getInstance();
+    protected static final Minecraft mc = Minecraft.getInstance();
     private final List<Setting> settings = new ArrayList<>();
     private final Category moduleCategory;
     private final KeybindSetting keybindSetting;
@@ -56,7 +56,7 @@ public abstract class Module implements IMinecraft {
     }
 
     public boolean isNull() {
-        return mc.player == null || mc.world == null;
+        return mc.player == null || mc.level == null;
     }
 
     public void addSetting(Setting setting) {

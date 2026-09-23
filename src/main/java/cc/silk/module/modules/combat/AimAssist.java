@@ -8,15 +8,15 @@ import cc.silk.module.setting.BooleanSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.friend.FriendManager;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.AxeItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.SwordItem;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.AxeItem;
+import cc.silk.utils.mc.InventoryUtil;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 public class AimAssist extends Module {
 
@@ -64,34 +64,34 @@ public class AimAssist extends Module {
         if (weaponsOnly.getValue() && !isHoldingWeapon())
             return;
 
-        if (mc.currentScreen != null)
+        if (mc.screen != null)
             return;
 
-        if (mc.crosshairTarget != null && mc.crosshairTarget.getType() == HitResult.Type.BLOCK
-                && mc.options.attackKey.isPressed()) {
-            return;
-        }
-
-        if (mc.player.getPitch() > pitchThreshold.getValueFloat()) {
+        if (mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK
+                && mc.options.keyAttack.isDown()) {
             return;
         }
 
-        if (ignoreBlocks.getValue() && mc.crosshairTarget != null
-                && mc.crosshairTarget.getType() == HitResult.Type.BLOCK) {
+        if (mc.player.getXRot() > pitchThreshold.getValueFloat()) {
+            return;
+        }
+
+        if (ignoreBlocks.getValue() && mc.hitResult != null
+                && mc.hitResult.getType() == HitResult.Type.BLOCK) {
             return;
         }
 
         currentTarget = findBestTarget();
 
-        if (mc.targetedEntity == currentTarget && disableOnTarget.getValue()) {
+        if (mc.crosshairPickEntity == currentTarget && disableOnTarget.getValue()) {
             return;
         }
 
         if (currentTarget != null) {
-            if (!throughWalls.getValue() && !mc.player.canSee(currentTarget))
+            if (!throughWalls.getValue() && !mc.player.hasLineOfSight(currentTarget))
                 return;
 
-            Vec3d chestPos = getChestPosition(currentTarget);
+            Vec3 chestPos = getChestPosition(currentTarget);
             float[] rotation = calculateRotation(chestPos);
             applySmoothAiming(rotation[0], rotation[1]);
         }
@@ -104,7 +104,7 @@ public class AimAssist extends Module {
         Entity bestTarget = null;
         double bestScore = Double.MAX_VALUE;
 
-        for (Entity entity : mc.world.getEntities()) {
+        for (Entity entity : mc.level.players()) {
             if (!isValidTarget(entity))
                 continue;
 
@@ -112,7 +112,7 @@ public class AimAssist extends Module {
             if (distance > range.getValue())
                 continue;
 
-            Vec3d chestPos = getChestPosition(entity);
+            Vec3 chestPos = getChestPosition(entity);
             float[] rotation = calculateRotation(chestPos);
             double fovDistance = getFOVDistance(rotation[0], rotation[1]);
 
@@ -131,31 +131,31 @@ public class AimAssist extends Module {
     private boolean isValidTarget(Entity entity) {
         if (entity == null || entity == mc.player || !(entity instanceof LivingEntity livingEntity))
             return false;
-        if (!livingEntity.isAlive() || livingEntity.isDead())
+        if (!livingEntity.isAlive() || livingEntity.isRemoved())
             return false;
         if (Teams.isTeammate(entity))
             return false;
-        if (entity instanceof PlayerEntity player && FriendManager.isFriend(player.getUuid()))
+        if (entity instanceof Player player && FriendManager.isFriend(player.getUUID()))
             return false;
 
-        return entity instanceof PlayerEntity ? targetPlayers.getValue() : targetMobs.getValue();
+        return entity instanceof Player ? targetPlayers.getValue() : targetMobs.getValue();
     }
 
-    private Vec3d getChestPosition(Entity entity) {
-        return new Vec3d(entity.getX(), entity.getEyeY(), entity.getZ());
+    private Vec3 getChestPosition(Entity entity) {
+        return new Vec3(entity.getX(), entity.getEyeY(), entity.getZ());
     }
 
-    private float[] calculateRotation(Vec3d target) {
-        Vec3d diff = target.subtract(mc.player.getEyePos());
+    private float[] calculateRotation(Vec3 target) {
+        Vec3 diff = target.subtract(mc.player.getEyePosition());
         double distance = Math.sqrt(diff.x * diff.x + diff.z * diff.z);
         float yaw = (float) Math.toDegrees(Math.atan2(diff.z, diff.x)) - 90.0f;
         float pitch = (float) -Math.toDegrees(Math.atan2(diff.y, distance));
-        return new float[] { MathHelper.wrapDegrees(yaw), MathHelper.clamp(pitch, -89.0f, 89.0f) };
+        return new float[] { Mth.wrapDegrees(yaw), Mth.clamp(pitch, -89.0f, 89.0f) };
     }
 
     private double getFOVDistance(float targetYaw, float targetPitch) {
-        float yawDiff = MathHelper.wrapDegrees(targetYaw - mc.player.getYaw());
-        float pitchDiff = targetPitch - mc.player.getPitch();
+        float yawDiff = Mth.wrapDegrees(targetYaw - mc.player.getYRot());
+        float pitchDiff = targetPitch - mc.player.getXRot();
         return Math.sqrt(yawDiff * yawDiff + pitchDiff * pitchDiff);
     }
 
@@ -176,10 +176,10 @@ public class AimAssist extends Module {
 
         updateBaseSpeed();
 
-        float currentYaw = mc.player.getYaw();
-        float currentPitch = mc.player.getPitch();
+        float currentYaw = mc.player.getYRot();
+        float currentPitch = mc.player.getXRot();
 
-        float yawDiff = MathHelper.wrapDegrees(targetYaw - currentYaw);
+        float yawDiff = Mth.wrapDegrees(targetYaw - currentYaw);
         float pitchDiff = targetPitch - currentPitch;
 
         float distance = (float) Math.hypot(yawDiff, pitchDiff);
@@ -190,11 +190,11 @@ public class AimAssist extends Module {
         float eased = easeOutCubic(t);
 
         float lerpFactor = eased * (smoothing.getValueFloat() / 10f) * deltaTime;
-        float newYaw = MathHelper.lerp(lerpFactor, currentYaw, currentYaw + yawDiff);
-        float newPitch = MathHelper.lerp(lerpFactor, currentPitch, currentPitch + pitchDiff);
+        float newYaw = Mth.lerp(lerpFactor, currentYaw, currentYaw + yawDiff);
+        float newPitch = Mth.lerp(lerpFactor, currentPitch, currentPitch + pitchDiff);
 
-        mc.player.setYaw(newYaw);
-        mc.player.setPitch(MathHelper.clamp(newPitch, -89f, 89f));
+        mc.player.setYRot(newYaw);
+        mc.player.setXRot(Mth.clamp(newPitch, -89f, 89f));
     }
 
     private float easeOutCubic(float t) {
@@ -207,7 +207,7 @@ public class AimAssist extends Module {
             lastSpeedChangeTime = now;
             float change = randomFloat(-5f, 5f);
             nextBaseSpeed += change;
-            nextBaseSpeed = MathHelper.clamp(nextBaseSpeed, 8f, 100f);
+            nextBaseSpeed = Mth.clamp(nextBaseSpeed, 8f, 100f);
         }
 
         currentBaseSpeed = (currentBaseSpeed * 0.9f) + (nextBaseSpeed * 0.1f);
@@ -220,10 +220,10 @@ public class AimAssist extends Module {
     private boolean isHoldingWeapon() {
         if (mc.player == null)
             return false;
-        if (mc.player.getMainHandStack().isEmpty())
+        if (mc.player.getMainHandItem().isEmpty())
             return false;
-        Item heldItem = mc.player.getMainHandStack().getItem();
-        return heldItem instanceof SwordItem || heldItem instanceof AxeItem;
+        Item heldItem = mc.player.getMainHandItem().getItem();
+        return InventoryUtil.isSword(heldItem) || heldItem instanceof AxeItem;
     }
 
     @Override

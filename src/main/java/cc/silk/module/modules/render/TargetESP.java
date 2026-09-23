@@ -1,29 +1,33 @@
 package cc.silk.module.modules.render;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import cc.silk.event.impl.render.Render3DEvent;
+import cc.silk.utils.render.RenderCompat;
 import cc.silk.module.Category;
 import cc.silk.module.Module;
+import cc.silk.utils.render.RenderCompat;
 import cc.silk.module.setting.ColorSetting;
 import cc.silk.module.setting.ModeSetting;
 import cc.silk.module.setting.NumberSetting;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.gl.ShaderProgramKeys;
-import net.minecraft.client.render.*;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.RotationAxis;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.rendertype.*;
+import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.resources.Identifier;
+import com.mojang.math.Axis;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 import java.awt.*;
 
 public final class TargetESP extends Module {
 
-    private static final Identifier FIREFLY_TEXTURE = Identifier.of("silk", "imgs/firefly.png");
+    private static final Identifier FIREFLY_TEXTURE = Identifier.fromNamespaceAndPath("silk", "imgs/firefly.png");
 
     private final ModeSetting targets = new ModeSetting("Targets", "Players", "Players", "Living");
     private final NumberSetting layers = new NumberSetting("Layers", 1, 5, 3, 1);
@@ -47,13 +51,8 @@ public final class TargetESP extends Module {
         if (isNull())
             return;
 
-        Vec3d cam = mc.gameRenderer.getCamera().getPos();
-        float tickDelta = mc.getRenderTickCounter().getTickDelta(true);
-
-        RenderSystem.enableBlend();
-        RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE);
-        RenderSystem.setShaderTexture(0, FIREFLY_TEXTURE);
-        RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
+        Vec3 cam = mc.gameRenderer.getMainCamera().position();
+        float tickDelta = mc.getDeltaTracker().getGameTimeDeltaPartialTick(true);
 
         float size = orbSize.getValueFloat();
         float yOff = heightOffset.getValueFloat();
@@ -64,23 +63,22 @@ public final class TargetESP extends Module {
 
         float iAge = (System.currentTimeMillis() % 100000) / 50.0f;
 
-        for (var entity : mc.world.getEntities()) {
+        for (var entity : mc.level.players()) {
             if (!shouldRender(entity))
                 continue;
 
-            double tPosX = entity.prevX + (entity.getX() - entity.prevX) * tickDelta - cam.x;
-            double tPosY = entity.prevY + (entity.getY() - entity.prevY) * tickDelta - cam.y + yOff;
-            double tPosZ = entity.prevZ + (entity.getZ() - entity.prevZ) * tickDelta - cam.z;
+            double tPosX = entity.xo + (entity.getX() - entity.xo) * tickDelta - cam.x;
+            double tPosY = entity.yo + (entity.getY() - entity.yo) * tickDelta - cam.y + yOff;
+            double tPosZ = entity.zo + (entity.getZ() - entity.zo) * tickDelta - cam.z;
 
-            if (mc.player.canSee(entity)) {
-                RenderSystem.enableDepthTest();
-                RenderSystem.depthMask(false);
+            if (mc.player.hasLineOfSight(entity)) {
+                
+                
             } else {
-                RenderSystem.disableDepthTest();
+                
             }
 
-            BufferBuilder buffer = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS,
-                    VertexFormats.POSITION_TEXTURE_COLOR);
+            BufferBuilder buffer = RenderCompat.begin(RenderTypes.text(FIREFLY_TEXTURE));
 
             float ageMultiplier = iAge * speed.getValueFloat();
 
@@ -103,35 +101,35 @@ public final class TargetESP extends Module {
                         orbColor = applyOpacity(c.getRGB(), offset);
                     }
 
-                    double ghostX = Math.cos(radians) * entity.getWidth();
+                    double ghostX = Math.cos(radians) * entity.getBbWidth();
                     double ghostY = sinQuad;
-                    double ghostZ = Math.sin(radians) * entity.getWidth();
+                    double ghostZ = Math.sin(radians) * entity.getBbWidth();
 
-                    MatrixStack matrices = new MatrixStack();
-                    matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(mc.gameRenderer.getCamera().getPitch()));
-                    matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(mc.gameRenderer.getCamera().getYaw() + 180.0F));
+                    PoseStack matrices = new PoseStack();
+                    matrices.mulPose(Axis.XP.rotationDegrees(mc.gameRenderer.getMainCamera().xRot()));
+                    matrices.mulPose(Axis.YP.rotationDegrees(mc.gameRenderer.getMainCamera().yRot() + 180.0F));
                     matrices.translate(tPosX + ghostX, tPosY + ghostY, tPosZ + ghostZ);
-                    matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-mc.gameRenderer.getCamera().getYaw()));
-                    matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(mc.gameRenderer.getCamera().getPitch()));
+                    matrices.mulPose(Axis.YP.rotationDegrees(-mc.gameRenderer.getMainCamera().yRot()));
+                    matrices.mulPose(Axis.XP.rotationDegrees(mc.gameRenderer.getMainCamera().xRot()));
 
-                    Matrix4f matrix = matrices.peek().getPositionMatrix();
+                    Matrix4f matrix = matrices.last().pose();
 
-                    buffer.vertex(matrix, -size, size, 0).texture(0f, 1f).color(orbColor);
-                    buffer.vertex(matrix, size, size, 0).texture(1f, 1f).color(orbColor);
-                    buffer.vertex(matrix, size, -size, 0).texture(1f, 0).color(orbColor);
-                    buffer.vertex(matrix, -size, -size, 0).texture(0, 0).color(orbColor);
+                    buffer.addVertex(matrix, -size, size, 0).setUv(0f, 1f).setColor(orbColor);
+                    buffer.addVertex(matrix, size, size, 0).setUv(1f, 1f).setColor(orbColor);
+                    buffer.addVertex(matrix, size, -size, 0).setUv(1f, 0).setColor(orbColor);
+                    buffer.addVertex(matrix, -size, -size, 0).setUv(0, 0).setColor(orbColor);
                 }
             }
 
-            BufferRenderer.drawWithGlobalProgram(buffer.end());
+            RenderCompat.draw(buffer);
 
-            if (mc.player.canSee(entity)) {
-                RenderSystem.depthMask(true);
+            if (mc.player.hasLineOfSight(entity)) {
+                
             }
         }
 
-        RenderSystem.enableDepthTest();
-        RenderSystem.disableBlend();
+        
+        
     }
 
     private Color blendColors(Color color1, Color color2, float ratio) {
@@ -150,11 +148,11 @@ public final class TargetESP extends Module {
                 .getRGB();
     }
 
-    private boolean shouldRender(net.minecraft.entity.Entity entity) {
+    private boolean shouldRender(net.minecraft.world.entity.Entity entity) {
         if (entity == mc.player)
             return false;
         if (targets.isMode("Players"))
-            return entity instanceof PlayerEntity;
+            return entity instanceof Player;
         return entity instanceof LivingEntity;
     }
 

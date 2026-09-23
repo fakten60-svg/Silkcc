@@ -5,11 +5,11 @@ import cc.silk.utils.IMinecraft;
 import cc.silk.utils.other.StringUtils;
 import cc.silk.utils.render.ColorUtils;
 import lombok.experimental.UtilityClass;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
-import net.minecraft.util.Formatting;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.ChatFormatting;
 
 import java.awt.*;
 import java.util.Objects;
@@ -17,22 +17,22 @@ import java.util.Objects;
 @UtilityClass
 public final class ChatUtil implements IMinecraft {
 
-    private static final MutableText BRACKET_COLOR = Text.empty().setStyle(Style.EMPTY.withFormatting(Formatting.GRAY));
+    private static final MutableComponent BRACKET_COLOR = Component.empty().setStyle(Style.EMPTY.applyFormat(ChatFormatting.GRAY));
 
     public static void infoChatMessage(final String message) {
-        ChatUtil.infoChatMessage(Text.literal(message));
+        ChatUtil.infoChatMessage(Component.literal(message));
     }
 
-    public static void infoChatMessage(final Text message) {
+    public static void infoChatMessage(final Component message) {
         ChatUtil.chatMessage(message.copy().withColor(Type.INFO.color()), true);
     }
 
     public static void warningChatMessage(final String message) {
-        ChatUtil.warningChatMessage(Text.literal(message));
+        ChatUtil.warningChatMessage(Component.literal(message));
     }
 
-    public static void warningChatMessage(final Text message) {
-        if (Objects.isNull(mc.inGameHud)) {
+    public static void warningChatMessage(final Component message) {
+        if (Objects.isNull(mc.gui)) {
             SilkClient.INSTANCE.getLogger().warn(message.getString());
             return;
         }
@@ -40,11 +40,11 @@ public final class ChatUtil implements IMinecraft {
     }
 
     public static void errorChatMessage(final String message) {
-        ChatUtil.errorChatMessage(Text.literal(message));
+        ChatUtil.errorChatMessage(Component.literal(message));
     }
 
-    public static void errorChatMessage(final Text message) {
-        if (Objects.isNull(mc.inGameHud)) {
+    public static void errorChatMessage(final Component message) {
+        if (Objects.isNull(mc.gui)) {
             SilkClient.INSTANCE.getLogger().error(message.getString());
             return;
         }
@@ -53,53 +53,53 @@ public final class ChatUtil implements IMinecraft {
 
 
     public static void emptyChatMessage(final boolean prefix) {
-        ChatUtil.chatMessage(Text.literal(" "), prefix);
+        ChatUtil.chatMessage(Component.literal(" "), prefix);
     }
 
     public static void chatMessage(final String message) {
-        ChatUtil.chatMessage(Text.literal(message));
+        ChatUtil.chatMessage(Component.literal(message));
     }
 
-    public static void chatMessage(final MutableText message) {
+    public static void chatMessage(final MutableComponent message) {
         ChatUtil.chatMessage(message, true);
     }
 
     public static void chatMessage(final String message, final boolean prefix) {
-        ChatUtil.chatMessage(Text.literal(message), prefix);
+        ChatUtil.chatMessage(Component.literal(message), prefix);
     }
 
-    public static void chatMessage(final MutableText message, final boolean prefix) {
-        if (Objects.isNull(mc.inGameHud)) {
+    public static void chatMessage(final MutableComponent message, final boolean prefix) {
+        if (Objects.isNull(mc.gui)) {
             SilkClient.INSTANCE.getLogger().info(message.getString());
             return;
         }
 
-        final MutableText text = prefix ? ChatUtil.chatPrefix().copy().append(message) : message;
-        mc.inGameHud.getChatHud().addMessage(text);
+        final MutableComponent text = prefix ? ChatUtil.chatPrefix().copy().append(message) : message;
+        mc.gui.getChat().addClientSystemMessage(text);
     }
 
     public static void addChatMessage(String text) {
-        if (mc.player == null || mc.world == null || Objects.isNull(mc.inGameHud) || mc.inGameHud.getChatHud() == null) {
+        if (mc.player == null || mc.level == null || Objects.isNull(mc.gui) || mc.gui.getChat() == null) {
             SilkClient.INSTANCE.getLogger().info("[Silk] " + text);
             return;
         }
-        mc.inGameHud.getChatHud().addMessage(Text.of(text));
+        mc.gui.getChat().addClientSystemMessage(Component.nullToEmpty(text));
     }
 
-    public static MutableText colorFade(final String text, final Style style, final Color startColor, final Color endColor) {
-        final MutableText mutableText = Text.empty();
+    public static MutableComponent colorFade(final String text, final Style style, final Color startColor, final Color endColor) {
+        final MutableComponent mutableText = Component.empty();
 
         for (int i = 0; i < text.length(); i++) {
             final float percent = (float) i / (text.length() - 1);
             final Color color = ColorUtils.colorInterpolate(startColor, endColor, percent);
 
-            mutableText.append(Text.literal(String.valueOf(text.charAt(i))).setStyle(style.withColor(TextColor.fromRgb(color.getRGB()))));
+            mutableText.append(Component.literal(String.valueOf(text.charAt(i))).setStyle(style.withColor(TextColor.fromRgb(color.getRGB()))));
         }
 
         return mutableText;
     }
 
-    public static MutableText chatPrefix() {
+    public static MutableComponent chatPrefix() {
         return BRACKET_COLOR.copy()
                 .append("[")
                 .append(ChatUtil.colorFade("Silk", Style.EMPTY, new Color(0, 191, 255), new Color(0, 255, 127)))

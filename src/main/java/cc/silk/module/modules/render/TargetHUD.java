@@ -10,16 +10,16 @@ import cc.silk.utils.render.DraggableComponent;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.util.DefaultSkinHelper;
-import net.minecraft.client.util.SkinTextures;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.resources.DefaultPlayerSkin;
+import net.minecraft.world.entity.player.PlayerSkin;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 
 import java.awt.*;
 import java.util.ArrayDeque;
@@ -56,8 +56,8 @@ public final class TargetHUD extends Module {
         if (isNull())
             return;
 
-        PlayerEntity target = findTarget();
-        if (target == null && mc.currentScreen == null) {
+        Player target = findTarget();
+        if (target == null && mc.screen == null) {
             return;
         }
 
@@ -106,10 +106,10 @@ public final class TargetHUD extends Module {
         NanoVGRenderer.drawRoundedRect(barX, healthBarY, barWidth, barHeight, barHeight / 2f, barBgColor);
 
         float maxHealth = target != null ? Math.max(target.getMaxHealth(), 1f) : 20f;
-        float health = target != null ? MathHelper.clamp(target.getHealth(), 0f, maxHealth) : 15f;
-        float healthPercent = MathHelper.clamp(health / maxHealth, 0f, 1f);
+        float health = target != null ? Mth.clamp(target.getHealth(), 0f, maxHealth) : 15f;
+        float healthPercent = Mth.clamp(health / maxHealth, 0f, 1f);
 
-        float deltaTime = mc.getRenderTickCounter().getTickDelta(true) / 20f;
+        float deltaTime = mc.getDeltaTracker().getGameTimeDeltaPartialTick(true) / 20f;
         float animationSpeed = 3.0f;
 
         if (Math.abs(healthPercent - lastHealthPercent) > 0.001f) {
@@ -130,7 +130,7 @@ public final class TargetHUD extends Module {
         }
 
         if (particles.getValue()) {
-            renderParticles(event.getContext().getScaledWindowWidth(), event.getContext().getScaledWindowHeight());
+            renderParticles(event.getContext().guiWidth(), event.getContext().guiHeight());
         }
 
         NanoVGRenderer.endFrame();
@@ -156,8 +156,8 @@ public final class TargetHUD extends Module {
         float barHeight = 6;
 
         float maxHealth = Math.max(target.getMaxHealth(), 1f);
-        float health = MathHelper.clamp(target.getHealth(), 0f, maxHealth);
-        float healthPercent = MathHelper.clamp(health / maxHealth, 0f, 1f);
+        float health = Mth.clamp(target.getHealth(), 0f, maxHealth);
+        float healthPercent = Mth.clamp(health / maxHealth, 0f, 1f);
         float healthBarWidth = barWidth * healthPercent;
 
         float particleSpawnX = barX + healthBarWidth;
@@ -178,7 +178,7 @@ public final class TargetHUD extends Module {
 
     private void renderParticles(int screenWidth, int screenHeight) {
         long now = System.currentTimeMillis();
-        float deltaTime = mc.getRenderTickCounter().getTickDelta(true) / 20f;
+        float deltaTime = mc.getDeltaTracker().getGameTimeDeltaPartialTick(true) / 20f;
 
         Iterator<HUDParticle> it = hudParticles.iterator();
         while (it.hasNext()) {
@@ -221,20 +221,20 @@ public final class TargetHUD extends Module {
         }
     }
 
-    private PlayerEntity findTarget() {
-        if (mc.player == null || mc.world == null) {
+    private Player findTarget() {
+        if (mc.player == null || mc.level == null) {
             return null;
         }
 
-        if (mc.targetedEntity instanceof PlayerEntity player && player.isAlive() && player != mc.player
+        if (mc.crosshairPickEntity instanceof Player player && player.isAlive() && player != mc.player
                 && !player.isSpectator()) {
             return player;
         }
 
         double range = 8.0;
-        PlayerEntity closest = null;
+        Player closest = null;
         double closestDistance = Double.MAX_VALUE;
-        for (PlayerEntity player : mc.world.getPlayers()) {
+        for (Player player : mc.level.players()) {
             if (player == mc.player || !player.isAlive() || player.isSpectator())
                 continue;
             double distance = mc.player.distanceTo(player);
@@ -266,14 +266,14 @@ public final class TargetHUD extends Module {
         NanoVGRenderer.drawTextWithFont(text, x, y, size, color, poppinsFontId);
     }
 
-    private void renderPlayerHead(DrawContext context, PlayerEntity player, int x, int y) {
+    private void renderPlayerHead(GuiGraphicsExtractor context, Player player, int x, int y) {
         Identifier texture = resolveSkin(player);
         if (texture == null) {
             return;
         }
 
-        MatrixStack matrices = context.getMatrices();
-        matrices.push();
+        PoseStack matrices = new PoseStack();
+        matrices.pushPose();
         
         // this aint working gang :Sob:
         NanoVGRenderer.save();
@@ -283,26 +283,26 @@ public final class TargetHUD extends Module {
         float scale = HEAD_SIZE / 8.0f;
         matrices.scale(scale, scale, 1f);
 
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        context.drawTexture(RenderLayer::getGuiTextured, texture, 0, 0, 8f, 8f, 8, 8, 64, 64);
-        context.drawTexture(RenderLayer::getGuiTextured, texture, 0, 0, 40f, 8f, 8, 8, 64, 64);
-        RenderSystem.disableBlend();
+        
+        
+        context.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, texture, 0, 0, 8f, 8f, 8, 8, 64, 64);
+        context.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, texture, 0, 0, 40f, 8f, 8, 8, 64, 64);
+        
 
         NanoVGRenderer.resetScissor();
         NanoVGRenderer.restore();
 
-        matrices.pop();
+        matrices.popPose();
     }
 
-    private Identifier resolveSkin(PlayerEntity player) {
-        SkinTextures textures;
-        if (player instanceof AbstractClientPlayerEntity clientPlayer) {
-            textures = clientPlayer.getSkinTextures();
+    private Identifier resolveSkin(Player player) {
+        PlayerSkin textures;
+        if (player instanceof AbstractClientPlayer clientPlayer) {
+            textures = clientPlayer.getSkin();
         } else {
-            textures = DefaultSkinHelper.getSkinTextures(player.getUuid());
+            textures = DefaultPlayerSkin.get(player.getUUID());
         }
-        return textures.texture();
+        return textures.body().texturePath();
     }
 
 }

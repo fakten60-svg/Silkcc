@@ -15,7 +15,7 @@ public class NanoVGContext {
             return;
         }
 
-        RenderSystem.assertOnRenderThread();
+        
 
         if (handle != 0) {
             cleanup();

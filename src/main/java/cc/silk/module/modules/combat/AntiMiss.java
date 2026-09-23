@@ -4,7 +4,7 @@ import cc.silk.event.impl.player.AttackEvent;
 import cc.silk.module.Category;
 import cc.silk.module.Module;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.world.phys.HitResult;
 
 public final class AntiMiss extends Module {
     public AntiMiss() {
@@ -15,8 +15,8 @@ public final class AntiMiss extends Module {
     private void onAttackEvent(AttackEvent event) {
         if (isNull()) return;
 
-        assert mc.crosshairTarget != null;
-        if (mc.crosshairTarget.getType().equals(HitResult.Type.MISS)) {
+        assert mc.hitResult != null;
+        if (mc.hitResult.getType().equals(HitResult.Type.MISS)) {
             event.cancel();
         }
     }

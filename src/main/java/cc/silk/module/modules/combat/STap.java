@@ -28,15 +28,15 @@ public class STap extends Module {
     @EventHandler
     private void onAttackEvent(DoAttackEvent event) {
         if (isNull()) return;
-        var target = mc.targetedEntity;
+        var target = mc.crosshairPickEntity;
         if (target == null) return;
         if (!target.isAlive()) return;
-        if (!mc.player.isOnGround() && onlyOnGround.getValue()) return;
+        if (!mc.player.onGround() && onlyOnGround.getValue()) return;
         if (Math.random() * 100 > chance.getValueFloat()) return;
         if (!KeyUtils.isKeyPressed(GLFW.GLFW_KEY_W)) return;
         if (mc.player.isSprinting()) {
             wasSprinting = true;
-            mc.options.backKey.setPressed(true);
+            mc.options.keyDown.setDown(true);
         }
     }
 
@@ -47,7 +47,7 @@ public class STap extends Module {
         if (!KeyUtils.isKeyPressed(GLFW.GLFW_KEY_W)) return;
         if (timer.hasElapsedTime(msDelay.getValueInt(), true)) {
             if (wasSprinting) {
-                mc.options.backKey.setPressed(false);
+                mc.options.keyDown.setDown(false);
                 wasSprinting = false;
             }
         }

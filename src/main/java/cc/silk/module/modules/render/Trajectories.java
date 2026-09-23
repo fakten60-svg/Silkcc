@@ -9,16 +9,23 @@ import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.render.W2SUtil;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.projectile.*;
-import net.minecraft.entity.projectile.thrown.*;
-import net.minecraft.entity.projectile.ProjectileUtil;
-import net.minecraft.item.*;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.entity.projectile.arrow.SpectralArrow;
+import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEgg;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownExperienceBottle;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.AbstractThrownPotion;
+import net.minecraft.world.entity.projectile.FishingHook;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.item.*;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.ClipContext;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -47,7 +54,7 @@ public final class Trajectories extends Module {
     }
 
     private static class ProjectileTracker {
-        List<Vec3d> path = new ArrayList<>();
+        List<Vec3> path = new ArrayList<>();
         long startTime = System.currentTimeMillis();
 
         boolean isExpired(double durationSeconds) {
@@ -57,7 +64,7 @@ public final class Trajectories extends Module {
 
     @EventHandler
     private void onRender2D(Render2DEvent event) {
-        if (isNull() || mc.player == null || mc.world == null)
+        if (isNull() || mc.player == null || mc.level == null)
             return;
 
         if (trackThrown.getValue()) {
@@ -68,9 +75,9 @@ public final class Trajectories extends Module {
 
         NanoVGRenderer.beginFrame();
 
-        ItemStack heldItem = mc.player.getMainHandStack();
+        ItemStack heldItem = mc.player.getMainHandItem();
         if (isProjectile(heldItem) && isUsingItem(heldItem)) {
-            List<Vec3d> trajectory = calculateTrajectory(heldItem);
+            List<Vec3> trajectory = calculateTrajectory(heldItem);
             if (!trajectory.isEmpty()) {
                 renderTrajectoryLines(trajectory, lineColor.getValue(), false);
             }
@@ -91,7 +98,7 @@ public final class Trajectories extends Module {
         Item item = stack.getItem();
 
         if (item instanceof BowItem) {
-            return mc.player.isUsingItem() && mc.player.getItemUseTime() > 0;
+            return mc.player.isUsingItem() && mc.player.getUseItemRemainingTicks() > 0;
         }
 
         if (item instanceof CrossbowItem) {
@@ -99,11 +106,11 @@ public final class Trajectories extends Module {
         }
 
         if (item instanceof TridentItem) {
-            return mc.player.isUsingItem() && mc.player.getItemUseTime() > 0;
+            return mc.player.isUsingItem() && mc.player.getUseItemRemainingTicks() > 0;
         }
 
         if (item instanceof SnowballItem || item instanceof EggItem ||
-                item instanceof EnderPearlItem || item instanceof ExperienceBottleItem ||
+                item instanceof EnderpearlItem || item instanceof ExperienceBottleItem ||
                 item instanceof PotionItem) {
             return true;
         }
@@ -120,26 +127,26 @@ public final class Trajectories extends Module {
                 !entry.getKey().isAlive() ||
                 entry.getKey().isRemoved());
 
-        for (Entity entity : mc.world.getEntities()) {
+        for (Entity entity : mc.level.players()) {
             if (isTrackableProjectile(entity) && !trackedProjectiles.containsKey(entity)) {
-                if (entity.age < 5 && entity.squaredDistanceTo(mc.player) < 100) {
+                if (entity.tickCount < 5 && entity.distanceToSqr(mc.player) < 100) {
                     trackedProjectiles.put(entity, new ProjectileTracker());
                 }
             }
         }
 
-        float tickDelta = mc.getRenderTickCounter().getTickDelta(true);
+        float tickDelta = mc.getDeltaTracker().getGameTimeDeltaPartialTick(true);
         for (Map.Entry<Entity, ProjectileTracker> entry : trackedProjectiles.entrySet()) {
             Entity entity = entry.getKey();
             ProjectileTracker tracker = entry.getValue();
 
-            double x = entity.prevX + (entity.getX() - entity.prevX) * tickDelta;
-            double y = entity.prevY + (entity.getY() - entity.prevY) * tickDelta;
-            double z = entity.prevZ + (entity.getZ() - entity.prevZ) * tickDelta;
+            double x = entity.xo + (entity.getX() - entity.xo) * tickDelta;
+            double y = entity.yo + (entity.getY() - entity.yo) * tickDelta;
+            double z = entity.zo + (entity.getZ() - entity.zo) * tickDelta;
 
-            Vec3d pos = new Vec3d(x, y, z);
+            Vec3 pos = new Vec3(x, y, z);
 
-            if (tracker.path.isEmpty() || tracker.path.get(tracker.path.size() - 1).squaredDistanceTo(pos) > 0.01) {
+            if (tracker.path.isEmpty() || tracker.path.get(tracker.path.size() - 1).distanceToSqr(pos) > 0.01) {
                 tracker.path.add(pos);
 
                 if (tracker.path.size() > maxPoints.getValueInt()) {
@@ -150,15 +157,15 @@ public final class Trajectories extends Module {
     }
 
     private boolean isTrackableProjectile(Entity entity) {
-        return entity instanceof ArrowEntity ||
-                entity instanceof SpectralArrowEntity ||
-                entity instanceof TridentEntity ||
-                entity instanceof SnowballEntity ||
-                entity instanceof EggEntity ||
-                entity instanceof EnderPearlEntity ||
-                entity instanceof ExperienceBottleEntity ||
-                entity instanceof PotionEntity ||
-                entity instanceof FishingBobberEntity;
+        return entity instanceof Arrow ||
+                entity instanceof SpectralArrow ||
+                entity instanceof ThrownTrident ||
+                entity instanceof Snowball ||
+                entity instanceof ThrownEgg ||
+                entity instanceof ThrownEnderpearl ||
+                entity instanceof ThrownExperienceBottle ||
+                entity instanceof AbstractThrownPotion ||
+                entity instanceof FishingHook;
     }
 
     private boolean isProjectile(ItemStack stack) {
@@ -168,31 +175,31 @@ public final class Trajectories extends Module {
                 item instanceof TridentItem ||
                 item instanceof SnowballItem ||
                 item instanceof EggItem ||
-                item instanceof EnderPearlItem ||
+                item instanceof EnderpearlItem ||
                 item instanceof ExperienceBottleItem ||
                 item instanceof PotionItem ||
                 item instanceof FishingRodItem;
     }
 
-    private List<Vec3d> calculateTrajectory(ItemStack stack) {
-        List<Vec3d> points = new ArrayList<>();
+    private List<Vec3> calculateTrajectory(ItemStack stack) {
+        List<Vec3> points = new ArrayList<>();
         Item item = stack.getItem();
 
-        float tickDelta = mc.getRenderTickCounter().getTickDelta(true);
+        float tickDelta = mc.getDeltaTracker().getGameTimeDeltaPartialTick(true);
 
-        double playerX = mc.player.prevX + (mc.player.getX() - mc.player.prevX) * tickDelta;
-        double playerY = mc.player.prevY + (mc.player.getY() - mc.player.prevY) * tickDelta;
-        double playerZ = mc.player.prevZ + (mc.player.getZ() - mc.player.prevZ) * tickDelta;
+        double playerX = mc.player.xo + (mc.player.getX() - mc.player.xo) * tickDelta;
+        double playerY = mc.player.yo + (mc.player.getY() - mc.player.yo) * tickDelta;
+        double playerZ = mc.player.zo + (mc.player.getZ() - mc.player.zo) * tickDelta;
 
-        float yaw = mc.player.prevYaw + (mc.player.getYaw() - mc.player.prevYaw) * tickDelta;
-        float pitch = mc.player.prevPitch + (mc.player.getPitch() - mc.player.prevPitch) * tickDelta;
+        float yaw = mc.player.yRotO + (mc.player.getYRot() - mc.player.yRotO) * tickDelta;
+        float pitch = mc.player.xRotO + (mc.player.getXRot() - mc.player.xRotO) * tickDelta;
 
-        Vec3d pos = new Vec3d(playerX, playerY + mc.player.getStandingEyeHeight(), playerZ);
+        Vec3 pos = new Vec3(playerX, playerY + mc.player.getEyeHeight(), playerZ);
 
-        Vec3d velocity = getRotationVector(pitch, yaw);
+        Vec3 velocity = getRotationVector(pitch, yaw);
 
         float power = getProjectilePower(item, stack);
-        velocity = velocity.multiply(power);
+        velocity = velocity.scale(power);
 
         float gravity = getGravity(item);
         float drag = getDrag(item);
@@ -202,46 +209,46 @@ public final class Trajectories extends Module {
         for (int i = 0; i < maxIterations; i++) {
             points.add(pos);
 
-            Vec3d nextPos = pos.add(velocity);
+            Vec3 nextPos = pos.add(velocity);
             HitResult hitResult = raycast(pos, nextPos);
 
             if (hitResult != null && hitResult.getType() != HitResult.Type.MISS) {
-                points.add(hitResult.getPos());
+                points.add(hitResult.getLocation());
                 break;
             }
 
             pos = nextPos;
 
-            velocity = velocity.multiply(drag);
+            velocity = velocity.scale(drag);
             velocity = velocity.add(0, -gravity, 0);
 
-            if (velocity.lengthSquared() < 0.001)
+            if (velocity.lengthSqr() < 0.001)
                 break;
         }
 
         return points;
     }
 
-    private Vec3d getRotationVector(float pitch, float yaw) {
+    private Vec3 getRotationVector(float pitch, float yaw) {
         float f = pitch * 0.017453292F;
         float g = -yaw * 0.017453292F;
         float h = (float) Math.cos(g);
         float i = (float) Math.sin(g);
         float j = (float) Math.cos(f);
         float k = (float) Math.sin(f);
-        return new Vec3d(i * j, -k, h * j);
+        return new Vec3(i * j, -k, h * j);
     }
 
     private float getProjectilePower(Item item, ItemStack stack) {
         if (item instanceof BowItem) {
-            int useTicks = mc.player.getItemUseTime();
-            float charge = BowItem.getPullProgress(useTicks);
+            int useTicks = mc.player.getUseItemRemainingTicks();
+            float charge = BowItem.getPowerForTime(useTicks);
             return charge * 3.0f;
         } else if (item instanceof CrossbowItem) {
             return 3.15f;
         } else if (item instanceof TridentItem) {
             return 2.5f;
-        } else if (item instanceof SnowballItem || item instanceof EggItem || item instanceof EnderPearlItem) {
+        } else if (item instanceof SnowballItem || item instanceof EggItem || item instanceof EnderpearlItem) {
             return 1.5f;
         } else if (item instanceof ExperienceBottleItem || item instanceof PotionItem) {
             return 1.0f;
@@ -269,17 +276,17 @@ public final class Trajectories extends Module {
         return 0.99f;
     }
 
-    private HitResult raycast(Vec3d start, Vec3d end) {
-        BlockHitResult blockHit = mc.world.raycast(new RaycastContext(
+    private HitResult raycast(Vec3 start, Vec3 end) {
+        BlockHitResult blockHit = mc.level.clip(new ClipContext(
                 start, end,
-                RaycastContext.ShapeType.COLLIDER,
-                RaycastContext.FluidHandling.NONE,
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE,
                 mc.player));
 
-        Box box = new Box(start, end).expand(1.0);
-        var entityHit = ProjectileUtil.getEntityCollision(
-                mc.world, mc.player, start, end, box,
-                entity -> !entity.isSpectator() && entity != mc.player);
+        AABB box = new AABB(start, end).inflate(1.0);
+        var entityHit = ProjectileUtil.getEntityHitResult(
+                mc.player, start, end, box,
+                entity -> !entity.isSpectator() && entity != mc.player, 0.0);
 
         if (entityHit != null) {
             return entityHit;
@@ -288,18 +295,18 @@ public final class Trajectories extends Module {
         return blockHit;
     }
 
-    private void renderTrajectoryLines(List<Vec3d> points, Color color, boolean isThrown) {
+    private void renderTrajectoryLines(List<Vec3> points, Color color, boolean isThrown) {
         if (points.size() < 2)
             return;
 
         float width = lineWidth.getValueFloat();
 
         for (int i = 0; i < points.size() - 1; i++) {
-            Vec3d start = points.get(i);
-            Vec3d end = points.get(i + 1);
+            Vec3 start = points.get(i);
+            Vec3 end = points.get(i + 1);
 
-            Vec3d screenStart = W2SUtil.getCoords(start);
-            Vec3d screenEnd = W2SUtil.getCoords(end);
+            Vec3 screenStart = W2SUtil.getCoords(start);
+            Vec3 screenEnd = W2SUtil.getCoords(end);
 
             if (screenStart != null && screenEnd != null && screenStart.z >= 0 && screenStart.z < 1 && screenEnd.z >= 0
                     && screenEnd.z < 1) {
@@ -321,8 +328,8 @@ public final class Trajectories extends Module {
         }
 
         if (showLandingPoint.getValue() && !isThrown && !points.isEmpty()) {
-            Vec3d lastPoint = points.get(points.size() - 1);
-            Vec3d screenPos = W2SUtil.getCoords(lastPoint);
+            Vec3 lastPoint = points.get(points.size() - 1);
+            Vec3 screenPos = W2SUtil.getCoords(lastPoint);
 
             if (screenPos != null && screenPos.z >= 0 && screenPos.z < 1) {
                 Color hitCol = hitColor.getValue();

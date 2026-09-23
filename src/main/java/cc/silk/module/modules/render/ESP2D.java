@@ -11,13 +11,13 @@ import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.render.W2SUtil;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.entity.passive.PassiveEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector4d;
 
 import java.awt.*;
@@ -47,34 +47,33 @@ public class ESP2D extends Module {
 
         @EventHandler
         private void onRender2D(Render2DEvent event) {
-                if (isNull() || mc.world == null || mc.player == null)
+                if (isNull() || mc.level == null || mc.player == null)
                         return;
 
-                com.mojang.blaze3d.systems.RenderSystem.enableBlend();
-                com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
+                
 
                 NanoVGRenderer.beginFrame();
 
-                for (Entity entity : mc.world.getEntities()) {
+                for (Entity entity : mc.level.players()) {
                         if (!(entity instanceof LivingEntity))
                                 continue;
 
                         if (!shouldRender(entity))
                                 continue;
 
-                        Box box = entity.getBoundingBox();
+                        AABB box = entity.getBoundingBox();
 
-                        if (!((WorldRendererAccessor) mc.worldRenderer).getFrustum().isVisible(box))
+                        if (!((WorldRendererAccessor) mc.levelRenderer).getFrustum().isVisible(box))
                                 continue;
 
-                        double x = entity.prevX + (entity.getX() - entity.prevX)
-                                        * mc.getRenderTickCounter().getTickDelta(false);
-                        double y = entity.prevY + (entity.getY() - entity.prevY)
-                                        * mc.getRenderTickCounter().getTickDelta(false);
-                        double z = entity.prevZ + (entity.getZ() - entity.prevZ)
-                                        * mc.getRenderTickCounter().getTickDelta(false);
+                        double x = entity.xo + (entity.getX() - entity.xo)
+                                        * mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+                        double y = entity.yo + (entity.getY() - entity.yo)
+                                        * mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+                        double z = entity.zo + (entity.getZ() - entity.zo)
+                                        * mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
 
-                        Box expandedBox = new Box(
+                        AABB expandedBox = new AABB(
                                         box.minX - entity.getX() + x - 0.05,
                                         box.minY - entity.getY() + y,
                                         box.minZ - entity.getZ() + z - 0.05,
@@ -82,21 +81,21 @@ public class ESP2D extends Module {
                                         box.maxY - entity.getY() + y + 0.1,
                                         box.maxZ - entity.getZ() + z + 0.05);
 
-                        Vec3d[] vectors = new Vec3d[] {
-                                        new Vec3d(expandedBox.minX, expandedBox.minY, expandedBox.minZ),
-                                        new Vec3d(expandedBox.minX, expandedBox.maxY, expandedBox.minZ),
-                                        new Vec3d(expandedBox.maxX, expandedBox.minY, expandedBox.minZ),
-                                        new Vec3d(expandedBox.maxX, expandedBox.maxY, expandedBox.minZ),
-                                        new Vec3d(expandedBox.minX, expandedBox.minY, expandedBox.maxZ),
-                                        new Vec3d(expandedBox.minX, expandedBox.maxY, expandedBox.maxZ),
-                                        new Vec3d(expandedBox.maxX, expandedBox.minY, expandedBox.maxZ),
-                                        new Vec3d(expandedBox.maxX, expandedBox.maxY, expandedBox.maxZ),
+                        Vec3[] vectors = new Vec3[] {
+                                        new Vec3(expandedBox.minX, expandedBox.minY, expandedBox.minZ),
+                                        new Vec3(expandedBox.minX, expandedBox.maxY, expandedBox.minZ),
+                                        new Vec3(expandedBox.maxX, expandedBox.minY, expandedBox.minZ),
+                                        new Vec3(expandedBox.maxX, expandedBox.maxY, expandedBox.minZ),
+                                        new Vec3(expandedBox.minX, expandedBox.minY, expandedBox.maxZ),
+                                        new Vec3(expandedBox.minX, expandedBox.maxY, expandedBox.maxZ),
+                                        new Vec3(expandedBox.maxX, expandedBox.minY, expandedBox.maxZ),
+                                        new Vec3(expandedBox.maxX, expandedBox.maxY, expandedBox.maxZ),
                         };
 
                         Vector4d position = null;
 
-                        for (Vec3d vector : vectors) {
-                                Vec3d vectorToScreen = W2SUtil.getCoords(vector);
+                        for (Vec3 vector : vectors) {
+                                Vec3 vectorToScreen = W2SUtil.getCoords(vector);
 
                                 if (vectorToScreen.z > 0 && vectorToScreen.z < 1) {
                                         if (position == null) {
@@ -257,17 +256,14 @@ public class ESP2D extends Module {
                 }
 
                 NanoVGRenderer.endFrame();
-
-                com.mojang.blaze3d.systems.RenderSystem.disableBlend();
-                com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         }
 
         private Color getColorForEntity(Entity entity) {
-                if (entity instanceof PlayerEntity)
+                if (entity instanceof Player)
                         return playerColor.getValue();
-                if (entity instanceof PassiveEntity)
+                if (entity instanceof Animal)
                         return passiveColor.getValue();
-                if (entity instanceof HostileEntity)
+                if (entity instanceof Enemy)
                         return hostileColor.getValue();
                 return Color.WHITE;
         }
@@ -280,12 +276,12 @@ public class ESP2D extends Module {
                         return false;
 
                 return switch (targets.getMode()) {
-                        case "Players" -> entity instanceof PlayerEntity;
-                        case "Passives" -> entity instanceof PassiveEntity;
-                        case "Hostiles" -> entity instanceof HostileEntity;
+                        case "Players" -> entity instanceof Player;
+                        case "Passives" -> entity instanceof Animal;
+                        case "Hostiles" -> entity instanceof Enemy;
                         case "All" ->
-                                entity instanceof PlayerEntity || entity instanceof PassiveEntity
-                                                || entity instanceof HostileEntity;
+                                entity instanceof Player || entity instanceof Animal
+                                                || entity instanceof Enemy;
                         default -> false;
                 };
         }

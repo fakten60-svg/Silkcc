@@ -4,14 +4,14 @@ import cc.silk.event.impl.player.TickEvent;
 import cc.silk.mixin.MinecraftClientAccessor;
 import cc.silk.module.Category;
 import cc.silk.module.Module;
+import cc.silk.utils.mc.InventoryUtil;
 import cc.silk.module.setting.NumberSetting;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.decoration.EndCrystalEntity;
-import net.minecraft.item.AxeItem;
-import net.minecraft.item.MaceItem;
-import net.minecraft.item.SwordItem;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.MaceItem;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 
 public class SwordSwap extends Module {
 
@@ -33,29 +33,29 @@ public class SwordSwap extends Module {
 
         if (shouldSwitchBack && System.currentTimeMillis() - switchTime >= switchDelay.getValue()) {
             if (originalSlot != -1) {
-                mc.player.getInventory().selectedSlot = originalSlot;
+                mc.player.getInventory().setSelectedSlot(originalSlot);
                 originalSlot = -1;
             }
             shouldSwitchBack = false;
         }
 
-        boolean attackPressed = mc.options.attackKey.isPressed();
+        boolean attackPressed = mc.options.keyAttack.isDown();
 
         if (attackPressed && !attackPressedLastTick) {
-            var heldItem = mc.player.getMainHandStack().getItem();
+            var heldItem = mc.player.getMainHandItem().getItem();
             boolean isAxe = heldItem instanceof AxeItem;
             boolean isMace = heldItem instanceof MaceItem;
-            boolean isSword = heldItem instanceof SwordItem;
+            boolean isSword = InventoryUtil.isSword(heldItem);
 
             if (!isAxe && !isMace && !isSword) {
-                HitResult hitResult = mc.crosshairTarget;
+                HitResult hitResult = mc.hitResult;
                 if (hitResult != null && hitResult.getType() == HitResult.Type.ENTITY) {
                     var entity = ((EntityHitResult) hitResult).getEntity();
-                    if (entity != null && !(entity instanceof EndCrystalEntity)) {
+                    if (entity != null && !(entity instanceof EndCrystal)) {
                         int swordSlot = findSwordSlot();
                         if (swordSlot != -1) {
-                            originalSlot = mc.player.getInventory().selectedSlot;
-                            mc.player.getInventory().selectedSlot = swordSlot;
+                            originalSlot = mc.player.getInventory().getSelectedSlot();
+                            mc.player.getInventory().setSelectedSlot(swordSlot);
                             ((MinecraftClientAccessor) mc).invokeDoAttack();
                             switchTime = System.currentTimeMillis();
                             shouldSwitchBack = true;
@@ -70,7 +70,7 @@ public class SwordSwap extends Module {
 
     private int findSwordSlot() {
         for (int i = 0; i < 9; i++) {
-            if (mc.player.getInventory().getStack(i).getItem() instanceof SwordItem) {
+            if (InventoryUtil.isSword(mc.player.getInventory().getItem(i))) {
                 return i;
             }
         }
@@ -80,7 +80,7 @@ public class SwordSwap extends Module {
     @Override
     public void onDisable() {
         if (originalSlot != -1) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
             originalSlot = -1;
         }
         shouldSwitchBack = false;

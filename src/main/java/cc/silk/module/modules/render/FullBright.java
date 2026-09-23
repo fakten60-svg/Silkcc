@@ -2,7 +2,7 @@ package cc.silk.module.modules.render;
 
 import cc.silk.module.Category;
 import cc.silk.module.Module;
-import net.minecraft.client.option.SimpleOption;
+import net.minecraft.client.OptionInstance;
 
 public class FullBright extends Module {
     private Double previousGamma = null;
@@ -16,9 +16,9 @@ public class FullBright extends Module {
         super.onEnable();
         if (mc != null && mc.options != null) {
             try {
-                SimpleOption<Double> gamma = mc.options.getGamma();
-                previousGamma = gamma.getValue();
-                gamma.setValue(1.0);
+                OptionInstance<Double> gamma = mc.options.gamma();
+                previousGamma = gamma.get();
+                gamma.set(1.0);
             } catch (Throwable ignored) {
             }
         }
@@ -29,7 +29,7 @@ public class FullBright extends Module {
         super.onDisable();
         if (mc != null && mc.options != null && previousGamma != null) {
             try {
-                mc.options.getGamma().setValue(previousGamma);
+                mc.options.gamma().set(previousGamma);
             } catch (Throwable ignored) {
             }
         }

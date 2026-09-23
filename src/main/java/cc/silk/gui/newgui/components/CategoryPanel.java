@@ -4,7 +4,7 @@ import cc.silk.module.Category;
 import cc.silk.module.Module;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
 import cc.silk.utils.render.GuiGlowHelper;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -345,7 +345,7 @@ public class CategoryPanel {
         return mouseY + 10;
     }
     
-    public void renderGlow(DrawContext context, float alpha, float scale, int centerX, int centerY) {
+    public void renderGlow(GuiGraphicsExtractor context, float alpha, float scale, int centerX, int centerY) {
         int visibleCount = 0;
         for (ModuleButton button : moduleButtons) {
             if (button.getSearchAlpha() > 0.01f) {
@@ -369,7 +369,7 @@ public class CategoryPanel {
         GuiGlowHelper.drawGuiGlow(context, transformedX, transformedY, transformedWidth, transformedHeight, CORNER_RADIUS * scale);
     }
     
-    public void renderSettingsPanelGlow(DrawContext context, float alpha) {
+    public void renderSettingsPanelGlow(GuiGraphicsExtractor context, float alpha) {
         if (settingsPanel != null && settingsPanel.isAnimating()) {
             settingsPanel.renderGlow(context, alpha);
         }

@@ -2,7 +2,7 @@ package cc.silk.utils.render.font.util;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.SneakyThrows;
-import net.minecraft.client.util.math.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
@@ -13,17 +13,16 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
 /**
- * A reimplementation of {@link MatrixStack}, containing a few optimizations.
+ * A reimplementation of {@link PoseStack}, containing a few optimizations.
  */
-public class FastMStack extends MatrixStack {
+public class FastMStack extends PoseStack {
     private static final MethodHandle MATRIXSTACK_ENTRY_CTOR;
 
     static {
         try {
-            // reflection should be fine, we're not doing any string names here
-            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(MatrixStack.Entry.class,
+            MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(PoseStack.Pose.class,
                     MethodHandles.lookup());
-            MATRIXSTACK_ENTRY_CTOR = lookup.findConstructor(MatrixStack.Entry.class,
+            MATRIXSTACK_ENTRY_CTOR = lookup.findConstructor(PoseStack.Pose.class,
                     MethodType.methodType(void.class, Matrix4f.class, Matrix3f.class));
         } catch (IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
@@ -38,53 +37,50 @@ public class FastMStack extends MatrixStack {
     }
 
     @Override
-    public void translate(float x, float y, float z) {
-        top.positionMatrix.translate(x, y, z);
+    public void translate(double x, double y, double z) {
+        top.positionMatrix.translate((float) x, (float) y, (float) z);
     }
 
     @Override
     public void scale(float x, float y, float z) {
         top.positionMatrix.scale(x, y, z);
         if (x == y && y == z) {
-            // normal matrix is normalized, if all elements are uniform, we can just scale it based on the sign of the
-            // elements. (positive / zero = no effect, negative = flip it)
             if (x != 0) {
                 top.normalMatrix.scale(Math.signum(x));
             }
-            return; // original MatrixStack implementation is missing this, resulting in invalid transformations
+            return;
         }
         float inverseX = 1.0f / x;
         float inverseY = 1.0f / y;
         float inverseZ = 1.0f / z;
-        // cbrt is faster than the pure java approximation these days
         float scalar = (float) (1f / Math.cbrt(inverseX * inverseY * inverseZ));
         top.normalMatrix.scale(scalar * inverseX, scalar * inverseY, scalar * inverseZ);
     }
 
     @Override
-    public void multiply(Quaternionf quaternion) {
+    public void mulPose(org.joml.Quaternionfc quaternion) {
         top.positionMatrix.rotate(quaternion);
-        top.normalMatrix.rotate(quaternion);
+        top.normalMatrix.rotate((Quaternionf) quaternion);
     }
 
     @Override
-    public void multiply(Quaternionf quaternion, float originX, float originY, float originZ) {
+    public void rotateAround(org.joml.Quaternionfc quaternion, float originX, float originY, float originZ) {
         top.positionMatrix.rotateAround(quaternion, originX, originY, originZ);
-        top.normalMatrix.rotate(quaternion);
+        top.normalMatrix.rotate((Quaternionf) quaternion);
     }
 
     @Override
-    public void multiplyPositionMatrix(Matrix4f matrix) {
+    public void mulPose(org.joml.Matrix4fc matrix) {
         top.positionMatrix.mul(matrix);
     }
 
     @Override
-    public void push() {
+    public void pushPose() {
         fEntries.add(top = new Entry(new Matrix4f(top.positionMatrix), new Matrix3f(top.normalMatrix)));
     }
 
     @Override
-    public void pop() {
+    public void popPose() {
         if (fEntries.size() == 1) {
             throw new IllegalStateException("Trying to pop an empty stack");
         }
@@ -94,9 +90,8 @@ public class FastMStack extends MatrixStack {
 
     @SneakyThrows
     @Override
-    public MatrixStack.Entry peek() {
-        // ugly hack but needed to interop with the original stack api
-        return (MatrixStack.Entry) MATRIXSTACK_ENTRY_CTOR.invoke(top.positionMatrix, top.normalMatrix);
+    public PoseStack.Pose last() {
+        return (PoseStack.Pose) MATRIXSTACK_ENTRY_CTOR.invoke(top.positionMatrix, top.normalMatrix);
     }
 
     @Override
@@ -105,7 +100,7 @@ public class FastMStack extends MatrixStack {
     }
 
     @Override
-    public void loadIdentity() {
+    public void setIdentity() {
         top.positionMatrix.identity();
         top.normalMatrix.identity();
     }

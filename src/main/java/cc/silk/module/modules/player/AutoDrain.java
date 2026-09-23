@@ -8,14 +8,14 @@ import cc.silk.module.Module;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.math.TimerUtil;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
 
  //  possibly make a better if in cobweb check but rn AABB is the best i can think of
 
@@ -37,11 +37,11 @@ public final class AutoDrain extends Module {
 
     @EventHandler
     private void onTickEvent(TickEvent event) {
-        if (isNull() || mc.currentScreen != null || mc.world == null) return;
+        if (isNull() || mc.screen != null || mc.level == null) return;
 
         if (pendingSwitchBack) {
             if (switchBackDelayMs.getValueInt() <= 0 || switchBackTimer.hasElapsedTime(switchBackDelayMs.getValueInt())) {
-                if (originalSlot != -1) mc.player.getInventory().selectedSlot = originalSlot;
+                if (originalSlot != -1) mc.player.getInventory().setSelectedSlot(originalSlot);
                 originalSlot = -1;
                 pendingSwitchBack = false;
             }
@@ -50,7 +50,7 @@ public final class AutoDrain extends Module {
 
         if (!cooldownTimer.hasElapsedTime(actionCooldownMs.getValueInt())) return;
 
-        if (!(mc.crosshairTarget instanceof BlockHitResult blockHit)) return;
+        if (!(mc.hitResult instanceof BlockHitResult blockHit)) return;
         BlockPos waterPos = getWaterSourcePosFromMouseOver(blockHit);
         if (waterPos == null) return;
 
@@ -59,8 +59,8 @@ public final class AutoDrain extends Module {
         int emptyBucketSlot = findEmptyBucketInHotbar();
         if (emptyBucketSlot == -1) return;
 
-        originalSlot = mc.player.getInventory().selectedSlot;
-        mc.player.getInventory().selectedSlot = emptyBucketSlot;
+        originalSlot = mc.player.getInventory().getSelectedSlot();
+        mc.player.getInventory().setSelectedSlot(emptyBucketSlot);
         ((MinecraftClientAccessor) mc).invokeDoItemUse();
         pendingSwitchBack = true;
         switchBackTimer.reset();
@@ -68,13 +68,13 @@ public final class AutoDrain extends Module {
     }
 
     private boolean isWaterSource(FluidState fluidState) {
-        return fluidState != null && fluidState.getFluid() == Fluids.WATER && fluidState.isStill();
+        return fluidState != null && fluidState.getType() == Fluids.WATER && fluidState.isSource();
     }
 
 
     private int findEmptyBucketInHotbar() {
         for (int hotbarIndex = 0; hotbarIndex < 9; hotbarIndex++) {
-            ItemStack stack = mc.player.getInventory().getStack(hotbarIndex);
+            ItemStack stack = mc.player.getInventory().getItem(hotbarIndex);
             if (!stack.isEmpty() && stack.getItem() == Items.BUCKET) return hotbarIndex;
         }
         return -1;
@@ -92,7 +92,7 @@ public final class AutoDrain extends Module {
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
-                    if (mc.world.getBlockState(new BlockPos(x, y, z)).isOf(Blocks.COBWEB)) return true;
+                    if (mc.level.getBlockState(new BlockPos(x, y, z)).is(Blocks.COBWEB)) return true;
                 }
             }
         }
@@ -101,13 +101,13 @@ public final class AutoDrain extends Module {
 
     private BlockPos getWaterSourcePosFromMouseOver(BlockHitResult blockHit) {
         BlockPos hitPos = blockHit.getBlockPos();
-        BlockState hitState = mc.world.getBlockState(hitPos);
-        if (hitState.getBlock() == Blocks.WATER && isWaterSource(mc.world.getFluidState(hitPos))) {
+        BlockState hitState = mc.level.getBlockState(hitPos);
+        if (hitState.getBlock() == Blocks.WATER && isWaterSource(mc.level.getFluidState(hitPos))) {
             return hitPos;
         }
-        BlockPos towardPlayer = hitPos.offset(blockHit.getSide());
-        BlockState towardState = mc.world.getBlockState(towardPlayer);
-        if (towardState.getBlock() == Blocks.WATER && isWaterSource(mc.world.getFluidState(towardPlayer))) {
+        BlockPos towardPlayer = hitPos.relative(blockHit.getDirection());
+        BlockState towardState = mc.level.getBlockState(towardPlayer);
+        if (towardState.getBlock() == Blocks.WATER && isWaterSource(mc.level.getFluidState(towardPlayer))) {
             return towardPlayer;
         }
         return null;
@@ -117,7 +117,7 @@ public final class AutoDrain extends Module {
     public void onDisable() {
         super.onDisable();
         if (pendingSwitchBack && originalSlot != -1 && mc.player != null) {
-            mc.player.getInventory().selectedSlot = originalSlot;
+            mc.player.getInventory().setSelectedSlot(originalSlot);
         }
         originalSlot = -1;
         pendingSwitchBack = false;
