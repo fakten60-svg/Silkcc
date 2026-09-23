@@ -35,7 +35,7 @@ public final class AutoTool extends Module {
 
         if (!mc.options.keyAttack.isDown()) {
             if (returnToPrevious.getValue() && previousSlot != -1) {
-                mc.player.getInventory().setSelectedSlot(previousSlot);
+                if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(previousSlot);
                 previousSlot = -1;
             }
             return;
@@ -65,7 +65,7 @@ public final class AutoTool extends Module {
         if (previousSlot == -1) {
             previousSlot = mc.player.getInventory().getSelectedSlot();
         }
-        mc.player.getInventory().setSelectedSlot(slot);
+        if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(slot);
         timer.reset();
     }
 
@@ -125,7 +125,7 @@ public final class AutoTool extends Module {
     @Override
     public void onDisable() {
         if (returnToPrevious.getValue() && previousSlot != -1) {
-            mc.player.getInventory().setSelectedSlot(previousSlot);
+            if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(previousSlot);
         }
         previousSlot = -1;
         super.onDisable();

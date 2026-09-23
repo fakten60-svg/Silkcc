@@ -32,7 +32,7 @@ public class TotemHit extends Module {
 
         if (shouldSwitchBack && System.currentTimeMillis() - switchTime >= switchDelay.getValue()) {
             if (originalSlot != -1) {
-                mc.player.getInventory().setSelectedSlot(originalSlot);
+                if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(originalSlot);
                 originalSlot = -1;
             }
             shouldSwitchBack = false;
@@ -47,7 +47,7 @@ public class TotemHit extends Module {
                     int swordSlot = findSwordSlot();
                     if (swordSlot != -1) {
                         originalSlot = mc.player.getInventory().getSelectedSlot();
-                        mc.player.getInventory().setSelectedSlot(swordSlot);
+                        if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(swordSlot);
                         ((MinecraftClientAccessor) mc).invokeDoAttack();
                         switchTime = System.currentTimeMillis();
                         shouldSwitchBack = true;
@@ -71,7 +71,7 @@ public class TotemHit extends Module {
     @Override
     public void onDisable() {
         if (originalSlot != -1) {
-            mc.player.getInventory().setSelectedSlot(originalSlot);
+            if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(originalSlot);
             originalSlot = -1;
         }
         shouldSwitchBack = false;

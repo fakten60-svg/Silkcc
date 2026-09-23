@@ -14,7 +14,9 @@ public class Teams extends Module {
     }
 
     public static boolean isTeammate(Entity entity) {
-        Teams teamsModule = SilkClient.INSTANCE.getModuleManager().getModule(Teams.class).get();
+        var opt = SilkClient.INSTANCE.getModuleManager().getModule(Teams.class);
+        if (opt.isEmpty()) return false;
+        Teams teamsModule = opt.get();
         if (!teamsModule.isEnabled()) {
             return false;
         }

@@ -22,7 +22,7 @@ public abstract class EntityMixin {
     @Shadow public abstract Level getWorld();
     @Shadow protected abstract void fall(double heightDifference, boolean onGround, BlockState landedState, BlockPos landedPosition);
 
-    @Inject(method = "isGlowing", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "isCurrentlyGlowing", at = @At("HEAD"), cancellable = true)
     private void onIsGlowing(CallbackInfoReturnable<Boolean> cir) {
         OutlineESP outlineESP = OutlineESP.getInstance();
         if (outlineESP != null && outlineESP.isEnabled()) {
@@ -34,7 +34,7 @@ public abstract class EntityMixin {
        
     }
 
-    @Inject(method = "getTeamColorValue", at = @At("HEAD"))
+    @Inject(method = "getTeamColor", at = @At("HEAD"))
     private void onGetTeamColorValue(CallbackInfoReturnable<Integer> cir) {
       
     }

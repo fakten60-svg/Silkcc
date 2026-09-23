@@ -87,7 +87,7 @@ public final class AutoPot extends Module {
             if (targetPitch == 89.9f) {
                 startThrowSequence();
             } else {
-                mc.player.getInventory().setSelectedSlot(savedHotbarSlot);
+                if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(savedHotbarSlot);
                 resetState();
             }
         } else {
@@ -100,7 +100,7 @@ public final class AutoPot extends Module {
                 if (targetPitch == 89.9f) {
                     startThrowSequence();
                 } else {
-                    mc.player.getInventory().setSelectedSlot(savedHotbarSlot);
+                    if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(savedHotbarSlot);
                     resetState();
                 }
             } else {
@@ -119,7 +119,7 @@ public final class AutoPot extends Module {
     }
 
     private void executeThrow() {
-        mc.player.getInventory().setSelectedSlot(availablePotionSlots.get(0));
+        if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(availablePotionSlots.get(0));
         ((MinecraftClientAccessor) mc).invokeDoItemUse();
         isWaitingToThrow = false;
         startRotation(savedPitch);
@@ -169,7 +169,7 @@ public final class AutoPot extends Module {
     @Override
     public void onDisable() {
         if (savedHotbarSlot != -1) {
-            mc.player.getInventory().setSelectedSlot(savedHotbarSlot);
+            if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(savedHotbarSlot);
             mc.player.setXRot(savedPitch);
         }
         resetState();

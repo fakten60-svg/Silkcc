@@ -89,7 +89,7 @@ public final class ThrowPot extends Module {
 
     private void throwNextPotion() {
         int slot = potionSlots.get(potsThrown % potionSlots.size());
-        mc.player.getInventory().setSelectedSlot(slot);
+        if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(slot);
         ((MinecraftClientAccessor) mc).invokeDoItemUse();
         potsThrown++;
         potTimer.reset();
@@ -97,7 +97,7 @@ public final class ThrowPot extends Module {
 
     private void finishThrow() {
         if (autoSwitch.getValue() && originalSlot != -1) {
-            mc.player.getInventory().setSelectedSlot(originalSlot);
+            if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(originalSlot);
         }
         if (lookDown.getValue()) {
             mc.player.setXRot(originalPitch);
@@ -148,7 +148,7 @@ public final class ThrowPot extends Module {
     @Override
     public void onDisable() {
         if (autoSwitch.getValue() && originalSlot != -1) {
-            mc.player.getInventory().setSelectedSlot(originalSlot);
+            if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(originalSlot);
         }
         if (lookDown.getValue()) {
             mc.player.setXRot(originalPitch);

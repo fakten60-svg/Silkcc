@@ -18,7 +18,7 @@ public class GameRendererMixin {
      * ({@code RenderSystem.getProjectionMatrix()} and the shared model-view stack that used to be mutated
      * here), so the matrices are now derived on demand in {@link cc.silk.utils.render.W2SUtil}.
      */
-    @Inject(method = "renderWorld", at = @At("TAIL"))
+    @Inject(method = "renderLevel", at = @At("TAIL"))
     private void onRenderWorldTail(DeltaTracker tickCounter, CallbackInfo ci) {
         SilkClient.INSTANCE.getSilkEventBus().post(new Render3DEvent(new PoseStack()));
     }

@@ -16,15 +16,17 @@ public class MouseMixin {
 
     @Shadow
     @Final
-    private Minecraft client;
+    private Minecraft minecraft;
 
-    @Inject(method = "onMouseButton", at = @At("HEAD"))
-    private void onMouseButton(long window, int button, int action, int mods, CallbackInfo ci) {
+    @Inject(method = "onButton", at = @At("HEAD"))
+    private void onMouseButton(long window, net.minecraft.client.input.MouseButtonInfo button, int action, CallbackInfo ci) {
         if (SilkClient.INSTANCE == null) return;
-        if (window != client.getWindow().handle()) return;
-        if (client.screen != null) return;
+        if (window != minecraft.getWindow().handle()) return;
+        if (minecraft.screen != null) return;
 
-        MouseClickEvent event = new MouseClickEvent(button, action, mods);
+        int btn = button != null ? button.button() : -1;
+        int mods = button != null ? button.modifiers() : 0;
+        MouseClickEvent event = new MouseClickEvent(btn, action, mods);
         SilkClient.INSTANCE.getSilkEventBus().post(event);
     }
 }
