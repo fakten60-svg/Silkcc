@@ -168,8 +168,8 @@ public final class AutoPot extends Module {
 
     @Override
     public void onDisable() {
-        if (savedHotbarSlot != -1) {
-            if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(savedHotbarSlot);
+        if (savedHotbarSlot != -1 && mc.player != null) {
+            if (mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(savedHotbarSlot);
             mc.player.setXRot(savedPitch);
         }
         resetState();

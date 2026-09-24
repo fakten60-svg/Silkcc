@@ -18,7 +18,7 @@ import java.util.Optional;
 @Mixin(Player.class)
 public class PlayerEntityMixin {
 
-    @Inject(method = "getBlockBreakingSpeed", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "getDestroySpeed", at = @At("RETURN"), cancellable = true)
     private void modifyBlockBreakingSpeed(BlockState block, CallbackInfoReturnable<Float> cir) {
         if (SilkClient.INSTANCE == null) return;
 

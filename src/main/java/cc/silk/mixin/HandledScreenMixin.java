@@ -18,9 +18,12 @@ import static cc.silk.SilkClient.mc;
 public class HandledScreenMixin {
         @Inject(method = "extractSlot", at = @At("TAIL"))
     public void postDrawSlot(GuiGraphicsExtractor context, Slot slot, int i, int j, CallbackInfo ci) {
-        if (!SilkClient.INSTANCE.moduleManager.getModule(ContainerSlots.class).get().isEnabled()) return;
+        if (SilkClient.INSTANCE == null) return;
 
-        if (ContainerSlots.highlightTotem.getValue() && slot.hasItem()) {
+        var containerSlots = SilkClient.INSTANCE.getModuleManager().getModule(ContainerSlots.class);
+        if (containerSlots.isEmpty() || !containerSlots.get().isEnabled()) return;
+
+        if (ContainerSlots.highlightTotem != null && ContainerSlots.highlightTotem.getValue() && slot.hasItem()) {
             if (slot.getItem().getItem() == Items.TOTEM_OF_UNDYING) {
                 context.fill(slot.x, slot.y, slot.x + 16, slot.y + 16, ContainerSlots.highlightColor.getValue().getRGB());
             }

@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class WindowMixin {
 
     @Inject(method = "<init>", at = @At("HEAD"))
-    private void enableDebugContext(CallbackInfo ci) {
+    private static void enableDebugContext(CallbackInfo ci) {
         GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_DEBUG_CONTEXT, GLFW.GLFW_TRUE);
     }
 }

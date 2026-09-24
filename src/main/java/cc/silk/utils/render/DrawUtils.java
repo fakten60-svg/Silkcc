@@ -39,11 +39,11 @@ public class DrawUtils {
         RenderCompat.draw(buffer);
 
         buffer = RenderCompat.begin(RenderTypes.lines());
-        buffer.addVertex(matrix, x, y2, 0.0F).setColor(c2.getRGB());
-        buffer.addVertex(matrix, x2, y2, 0.0F).setColor(c2.getRGB());
-        buffer.addVertex(matrix, x2, y, 0.0F).setColor(c2.getRGB());
-        buffer.addVertex(matrix, x, y, 0.0F).setColor(c2.getRGB());
-        buffer.addVertex(matrix, x, y2, 0.0F).setColor(c2.getRGB());
+        RenderCompat.lineVertex(buffer, matrix, x, y2, 0.0F, c2.getRGB());
+        RenderCompat.lineVertex(buffer, matrix, x2, y2, 0.0F, c2.getRGB());
+        RenderCompat.lineVertex(buffer, matrix, x2, y, 0.0F, c2.getRGB());
+        RenderCompat.lineVertex(buffer, matrix, x, y, 0.0F, c2.getRGB());
+        RenderCompat.lineVertex(buffer, matrix, x, y2, 0.0F, c2.getRGB());
         RenderCompat.draw(buffer);
         endRender();
     }

@@ -1,6 +1,8 @@
 package cc.silk.module.modules.misc;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.PropertyMap;
+import com.google.common.collect.HashMultimap;
 import cc.silk.event.impl.player.AttackEvent;
 import cc.silk.event.impl.level.WorldChangeEvent;
 import cc.silk.module.Category;
@@ -199,13 +201,13 @@ public class FakePlayer extends Module {
         if (fakePlayer != null)
             return;
         GameProfile original = mc.player.getGameProfile();
-        GameProfile profile = new GameProfile(UUID.randomUUID(), original.name());
-        profile.properties().putAll(original.properties());
+        // authlib 7 exposes an immutable PropertyMap on GameProfile, so the skin properties have to
+        // be copied into a mutable one before the profile can be used for a RemotePlayer.
+        PropertyMap properties = new PropertyMap(HashMultimap.create(original.properties()));
+        GameProfile profile = new GameProfile(UUID.randomUUID(), original.name(), properties);
 
         RemotePlayer other = new RemotePlayer(mc.level, profile);
         other.setPos(mc.player.getX(), mc.player.getY(), mc.player.getZ());
-                other.setYRot(mc.player.getYRot());
-                other.setXRot(mc.player.getXRot());
         other.setYRot(mc.player.getYRot());
         other.setXRot(mc.player.getXRot());
 

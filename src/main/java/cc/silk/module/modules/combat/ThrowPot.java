@@ -96,11 +96,13 @@ public final class ThrowPot extends Module {
     }
 
     private void finishThrow() {
-        if (autoSwitch.getValue() && originalSlot != -1) {
-            if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(originalSlot);
-        }
-        if (lookDown.getValue()) {
-            mc.player.setXRot(originalPitch);
+        if (mc.player != null) {
+            if (autoSwitch.getValue() && originalSlot != -1 && mc.player.getInventory() != null) {
+                mc.player.getInventory().setSelectedSlot(originalSlot);
+            }
+            if (lookDown.getValue()) {
+                mc.player.setXRot(originalPitch);
+            }
         }
         isThrowing = false;
         potsToThrow = 0;
@@ -147,11 +149,13 @@ public final class ThrowPot extends Module {
 
     @Override
     public void onDisable() {
-        if (autoSwitch.getValue() && originalSlot != -1) {
-            if (mc.player != null && mc.player.getInventory() != null) mc.player.getInventory().setSelectedSlot(originalSlot);
-        }
-        if (lookDown.getValue()) {
-            mc.player.setXRot(originalPitch);
+        if (mc.player != null) {
+            if (autoSwitch.getValue() && originalSlot != -1 && mc.player.getInventory() != null) {
+                mc.player.getInventory().setSelectedSlot(originalSlot);
+            }
+            if (lookDown.getValue()) {
+                mc.player.setXRot(originalPitch);
+            }
         }
         potionSlots.clear();
         originalSlot = -1;

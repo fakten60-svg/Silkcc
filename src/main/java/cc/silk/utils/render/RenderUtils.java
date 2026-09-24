@@ -46,32 +46,32 @@ public final class RenderUtils {
         float maxY = (float) box.maxY;
         float maxZ = (float) box.maxZ;
 
-        buffer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, minX, minY, minZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, maxX, minY, minZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, maxX, minY, minZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, maxX, minY, maxZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, maxX, minY, maxZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, minX, minY, maxZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, minX, minY, maxZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, minX, minY, minZ, r, g, b, a);
 
-        buffer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, minX, maxY, minZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, maxX, maxY, minZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, maxX, maxY, minZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, maxX, maxY, maxZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, maxX, maxY, maxZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, minX, maxY, maxZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, minX, maxY, maxZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, minX, maxY, minZ, r, g, b, a);
 
-        buffer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, a);
-        buffer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, minX, minY, minZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, minX, maxY, minZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, maxX, minY, minZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, maxX, maxY, minZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, maxX, minY, maxZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, maxX, maxY, maxZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, minX, minY, maxZ, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, minX, maxY, maxZ, r, g, b, a);
 
         RenderCompat.draw(buffer);
     }
@@ -146,8 +146,8 @@ public final class RenderUtils {
         float b = color.getBlue() / 255.0f;
         float a = color.getAlpha() / 255.0f;
 
-        buffer.addVertex(matrix, (float) start.x, (float) start.y, (float) start.z).setColor(r, g, b, a);
-        buffer.addVertex(matrix, (float) end.x, (float) end.y, (float) end.z).setColor(r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, (float) start.x, (float) start.y, (float) start.z, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, (float) end.x, (float) end.y, (float) end.z, r, g, b, a);
 
         RenderCompat.draw(buffer);
     }

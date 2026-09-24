@@ -12,8 +12,10 @@ Silk was developed to provide a **free, functional solution** for players wantin
 
 ## Information
 
-- **Version:** 1.21.4  
-- **JDK Version:** JDK 21  
+- **Version:** 26.1.2  
+- **JDK Version:** JDK 25  
+- **Fabric Loader:** 0.19.5  
+- **Fabric API:** 0.155.3+26.1.2  
 
 ### Anti-Cheats Tested On
 
@@ -48,7 +50,7 @@ Silk was developed to provide a **free, functional solution** for players wantin
 
 ## Build Guide
 
-1. Make sure you have **Gradle** and **JDK 21** installed.  
+1. Make sure you have **JDK 25** installed (Gradle comes from the wrapper).  
 2. Clone the repository:
 
    ```bash
