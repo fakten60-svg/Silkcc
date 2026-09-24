@@ -15,6 +15,7 @@ public class ClientPlayerInteractionManagerMixin {
 
     @Inject(method = "attack", at = @At("HEAD"))
     private void attackEntityInject(Player player, Entity target, CallbackInfo callbackInfo) {
+        if (SilkClient.INSTANCE == null) return;
         SilkClient.INSTANCE.getSilkEventBus().post(new AttackEvent(target));
     }
 }

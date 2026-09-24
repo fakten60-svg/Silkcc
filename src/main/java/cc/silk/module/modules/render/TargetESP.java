@@ -27,7 +27,7 @@ import java.awt.*;
 
 public final class TargetESP extends Module {
 
-    private static final Identifier FIREFLY_TEXTURE = Identifier.fromNamespaceAndPath("silk", "imgs/firefly.png");
+    private static final Identifier FIREFLY_TEXTURE = Identifier.fromNamespaceAndPath("silk", "visuals/firefly.png");
 
     private final ModeSetting targets = new ModeSetting("Targets", "Players", "Players", "Living");
     private final NumberSetting layers = new NumberSetting("Layers", 1, 5, 3, 1);
@@ -114,10 +114,10 @@ public final class TargetESP extends Module {
 
                     Matrix4f matrix = matrices.last().pose();
 
-                    buffer.addVertex(matrix, -size, size, 0).setUv(0f, 1f).setColor(orbColor);
-                    buffer.addVertex(matrix, size, size, 0).setUv(1f, 1f).setColor(orbColor);
-                    buffer.addVertex(matrix, size, -size, 0).setUv(1f, 0).setColor(orbColor);
-                    buffer.addVertex(matrix, -size, -size, 0).setUv(0, 0).setColor(orbColor);
+                    buffer.addVertex(matrix, -size, size, 0).setUv(0f, 1f).setColor(orbColor).setLight(RenderCompat.FULL_BRIGHT);
+                    buffer.addVertex(matrix, size, size, 0).setUv(1f, 1f).setColor(orbColor).setLight(RenderCompat.FULL_BRIGHT);
+                    buffer.addVertex(matrix, size, -size, 0).setUv(1f, 0).setColor(orbColor).setLight(RenderCompat.FULL_BRIGHT);
+                    buffer.addVertex(matrix, -size, -size, 0).setUv(0, 0).setColor(orbColor).setLight(RenderCompat.FULL_BRIGHT);
                 }
             }
 

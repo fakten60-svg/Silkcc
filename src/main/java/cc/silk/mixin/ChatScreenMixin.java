@@ -13,6 +13,8 @@ public class ChatScreenMixin {
 
     @Inject(method = "handleChatInput", at = @At("HEAD"), cancellable = true)
     private void onSendMessage(String chatText, boolean addToHistory, CallbackInfo ci) {
+        if (SilkClient.INSTANCE == null) return;
+
         ChatEvent event = new ChatEvent(chatText);
         SilkClient.INSTANCE.getSilkEventBus().post(event);
 

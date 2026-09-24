@@ -21,7 +21,7 @@ import net.minecraft.world.phys.Vec3;
 import java.awt.*;
 
 public final class ArrowESP extends Module {
-    private static final Identifier ARROW_TEXTURE = Identifier.fromNamespaceAndPath("silk", "imgs/triangle.png");
+    private static final Identifier ARROW_TEXTURE = Identifier.fromNamespaceAndPath("silk", "visuals/triangle.png");
     private final BooleanSetting showSelf = new BooleanSetting("Show Self", false);
     private final NumberSetting range = new NumberSetting("Range", 10.0D, 200.0D, 120.0D, 5.0D);
     private final NumberSetting size = new NumberSetting("Size", 8.0D, 64.0D, 24.0D, 1.0D);

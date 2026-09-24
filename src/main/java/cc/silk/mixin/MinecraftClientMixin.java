@@ -38,7 +38,7 @@ public class MinecraftClientMixin implements IMinecraft {
     public MultiPlayerGameMode gameMode;
     @Shadow
     @Final
-    private DeltaTracker.Timer renderTickCounter;
+    private DeltaTracker.Timer deltaTracker;
 
     @Inject(method = "createTitle", at = @At("HEAD"), cancellable = true)
     public void setTitle(CallbackInfoReturnable<String> cir) {

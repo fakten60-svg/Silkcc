@@ -415,8 +415,8 @@ public final class TrapSave extends Module {
     }
 
     private void addEdge(BufferBuilder buffer, Matrix4f matrix, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b, float a) {
-        buffer.addVertex(matrix, x1, y1, z1).setColor(r, g, b, a);
-        buffer.addVertex(matrix, x2, y2, z2).setColor(r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, x1, y1, z1, r, g, b, a);
+        RenderCompat.lineVertex(buffer, matrix, x2, y2, z2, r, g, b, a);
     }
 
     private void clearDetectedTraps() {

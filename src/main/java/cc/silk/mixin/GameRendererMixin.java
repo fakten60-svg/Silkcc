@@ -20,6 +20,7 @@ public class GameRendererMixin {
      */
     @Inject(method = "renderLevel", at = @At("TAIL"))
     private void onRenderWorldTail(DeltaTracker tickCounter, CallbackInfo ci) {
+        if (SilkClient.INSTANCE == null) return;
         SilkClient.INSTANCE.getSilkEventBus().post(new Render3DEvent(new PoseStack()));
     }
 }

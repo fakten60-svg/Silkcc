@@ -4,9 +4,9 @@ import cc.silk.SilkClient;
 import cc.silk.event.impl.network.DisconnectEvent;
 import cc.silk.event.impl.network.PacketEvent;
 import cc.silk.event.types.TransferOrder;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.network.Connection;
-import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.protocol.Packet;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -32,8 +32,8 @@ public class MixinClientConnection {
         }
     }
 
-    @Inject(method = "send(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketSendListener;Z)V", at = @At("HEAD"), cancellable = true)
-    private void sendPacketEventInject(Packet<?> packet, PacketSendListener callbacks, boolean flush, CallbackInfo ci) {
+    @Inject(method = "send(Lnet/minecraft/network/protocol/Packet;Lio/netty/channel/ChannelFutureListener;Z)V", at = @At("HEAD"), cancellable = true)
+    private void sendPacketEventInject(Packet<?> packet, ChannelFutureListener callbacks, boolean flush, CallbackInfo ci) {
         postPacketEvent(packet, TransferOrder.SEND, ci);
     }
 

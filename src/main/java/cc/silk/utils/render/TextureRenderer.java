@@ -69,10 +69,14 @@ public final class TextureRenderer {
         int g = color >> 8 & 255;
         int b = color & 255;
         BufferBuilder builder = RenderCompat.begin(RenderTypes.text(texture));
-        builder.addVertex(matrix, -halfWidth, halfHeight, 0.0f).setUv(0.0f, 1.0f).setColor(r, g, b, a);
-        builder.addVertex(matrix, halfWidth, halfHeight, 0.0f).setUv(1.0f, 1.0f).setColor(r, g, b, a);
-        builder.addVertex(matrix, halfWidth, -halfHeight, 0.0f).setUv(1.0f, 0.0f).setColor(r, g, b, a);
-        builder.addVertex(matrix, -halfWidth, -halfHeight, 0.0f).setUv(0.0f, 0.0f).setColor(r, g, b, a);
+        builder.addVertex(matrix, -halfWidth, halfHeight, 0.0f).setUv(0.0f, 1.0f).setColor(r, g, b, a)
+                .setLight(RenderCompat.FULL_BRIGHT);
+        builder.addVertex(matrix, halfWidth, halfHeight, 0.0f).setUv(1.0f, 1.0f).setColor(r, g, b, a)
+                .setLight(RenderCompat.FULL_BRIGHT);
+        builder.addVertex(matrix, halfWidth, -halfHeight, 0.0f).setUv(1.0f, 0.0f).setColor(r, g, b, a)
+                .setLight(RenderCompat.FULL_BRIGHT);
+        builder.addVertex(matrix, -halfWidth, -halfHeight, 0.0f).setUv(0.0f, 0.0f).setColor(r, g, b, a)
+                .setLight(RenderCompat.FULL_BRIGHT);
         RenderCompat.draw(builder);
 
         if (linearFilter) {
@@ -126,10 +130,14 @@ public final class TextureRenderer {
         int b = color & 255;
 
         BufferBuilder builder = RenderCompat.begin(RenderTypes.text(texture));
-        builder.addVertex(matrix, -halfWidth, halfHeight, 0.0f).setUv(0.0f, 1.0f).setColor(r, g, b, a);
-        builder.addVertex(matrix, halfWidth, halfHeight, 0.0f).setUv(1.0f, 1.0f).setColor(r, g, b, a);
-        builder.addVertex(matrix, halfWidth, -halfHeight, 0.0f).setUv(1.0f, 0.0f).setColor(r, g, b, a);
-        builder.addVertex(matrix, -halfWidth, -halfHeight, 0.0f).setUv(0.0f, 0.0f).setColor(r, g, b, a);
+        builder.addVertex(matrix, -halfWidth, halfHeight, 0.0f).setUv(0.0f, 1.0f).setColor(r, g, b, a)
+                .setLight(RenderCompat.FULL_BRIGHT);
+        builder.addVertex(matrix, halfWidth, halfHeight, 0.0f).setUv(1.0f, 1.0f).setColor(r, g, b, a)
+                .setLight(RenderCompat.FULL_BRIGHT);
+        builder.addVertex(matrix, halfWidth, -halfHeight, 0.0f).setUv(1.0f, 0.0f).setColor(r, g, b, a)
+                .setLight(RenderCompat.FULL_BRIGHT);
+        builder.addVertex(matrix, -halfWidth, -halfHeight, 0.0f).setUv(0.0f, 0.0f).setColor(r, g, b, a)
+                .setLight(RenderCompat.FULL_BRIGHT);
         RenderCompat.draw(builder);
 
         if (linearFilter) {

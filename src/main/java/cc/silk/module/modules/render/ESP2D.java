@@ -1,7 +1,6 @@
 package cc.silk.module.modules.render;
 
 import cc.silk.event.impl.render.Render2DEvent;
-import cc.silk.mixin.WorldRendererAccessor;
 import cc.silk.module.Category;
 import cc.silk.module.Module;
 import cc.silk.module.setting.BooleanSetting;
@@ -62,9 +61,6 @@ public class ESP2D extends Module {
                                 continue;
 
                         AABB box = entity.getBoundingBox();
-
-                        if (!((WorldRendererAccessor) mc.levelRenderer).getFrustum().isVisible(box))
-                                continue;
 
                         double x = entity.xo + (entity.getX() - entity.xo)
                                         * mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
